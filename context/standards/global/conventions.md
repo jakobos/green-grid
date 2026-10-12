@@ -16,3 +16,6 @@ Gate incomplete or risky features behind flags rather than keeping long-lived br
 
 ## Changelog
 Record significant changes in a changelog or release notes so the "what changed and why" is discoverable without reading diffs.
+
+## Conventional commits
+Use the Conventional Commits format: `type(scope): description`. Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`, `perf`. Scope is optional but encouraged. Subject line in lowercase, no period, imperative mood.
