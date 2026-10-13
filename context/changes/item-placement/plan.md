@@ -93,10 +93,10 @@ Tests: `src/components/Canvas.test.tsx`, `src/components/GardenItemShape.test.ts
 
 ### Phase 2: Canvas drop, item rendering, and layer ordering
 #### Automated
-- [ ] 2.1 (isolated) GardenItemShape renders the correct shape and label for a catalog item
-- [ ] 2.2 (isolated) Drop handler converts screen coords to grid-snapped garden coords
-- [ ] 2.3 (isolated) `vitest run` passes
+- [x] 2.1 (isolated) GardenItemShape renders the correct shape and label for a catalog item — 5614e6b
+- [x] 2.2 (isolated) Drop handler converts screen coords to grid-snapped garden coords — 5614e6b
+- [x] 2.3 (isolated) `vitest run` passes — 5614e6b
 #### Manual
-- [ ] 2.4 (agent-runnable) Drag item from sidebar onto canvas; colored shape appears at snapped position
-- [ ] 2.5 (agent-runnable) Items from different layers render in correct order (underground below trees)
-- [ ] 2.6 (agent-runnable) Refresh page; placed items still visible on canvas
+- [x] 2.4 (agent-runnable) Drag item from sidebar onto canvas; colored shape appears at snapped position — 5614e6b
+- [x] 2.5 (agent-runnable) Items from different layers render in correct order (underground below trees) — 5614e6b
+- [x] 2.6 (agent-runnable) Refresh page; placed items still visible on canvas — 5614e6b
