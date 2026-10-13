@@ -1,6 +1,25 @@
-// Item shape is defined in slice 2; no items are rendered in this slice.
+export type Layer = 1 | 2 | 3 | 4 | 5
+
+export type CatalogItem = {
+  catalogId: string
+  name: string
+  description: string
+  layer: Layer
+  defaultWidthMeters: number
+  defaultHeightMeters: number
+  shape: 'rect' | 'circle'
+  color: string
+  estimatedCostEur: number
+}
+
 export type GardenItem = {
   id: string
+  catalogId: string
+  xMeters: number
+  yMeters: number
+  widthMeters: number
+  heightMeters: number
+  rotationDeg: number
 }
 
 export type Garden = {

@@ -1,0 +1,196 @@
+import type { CatalogItem } from '@/types/garden'
+
+// Layer colors: one per layer for visual grouping
+// 1 Underground, 2 Ground level, 3 Ground items, 4 Low plants, 5 Trees
+const LAYER_COLORS: Record<number, string> = {
+  1: '#8B6914', // brown — underground
+  2: '#5C8A3C', // mid-green — ground level
+  3: '#4A9E6B', // teal-green — ground items
+  4: '#3A7CA5', // blue-green — low plants
+  5: '#2D5A27', // dark green — trees
+}
+
+export const CATALOG: CatalogItem[] = [
+  // Layer 1 — Underground
+  {
+    catalogId: 'bulb-tulip',
+    name: 'Tulip Bulb',
+    description: 'Spring-flowering bulb planted in autumn.',
+    layer: 1,
+    defaultWidthMeters: 0.2,
+    defaultHeightMeters: 0.2,
+    shape: 'circle',
+    color: LAYER_COLORS[1],
+    estimatedCostEur: 0.5,
+  },
+  {
+    catalogId: 'bulb-daffodil',
+    name: 'Daffodil Bulb',
+    description: 'Perennial spring bulb, naturalises well.',
+    layer: 1,
+    defaultWidthMeters: 0.2,
+    defaultHeightMeters: 0.2,
+    shape: 'circle',
+    color: LAYER_COLORS[1],
+    estimatedCostEur: 0.4,
+  },
+  {
+    catalogId: 'root-carrot',
+    name: 'Carrot',
+    description: 'Root vegetable; needs deep, loose soil.',
+    layer: 1,
+    defaultWidthMeters: 0.5,
+    defaultHeightMeters: 1.0,
+    shape: 'rect',
+    color: LAYER_COLORS[1],
+    estimatedCostEur: 1.2,
+  },
+
+  // Layer 2 — Ground level
+  {
+    catalogId: 'groundcover-clover',
+    name: 'White Clover',
+    description: 'Low groundcover, nitrogen fixer.',
+    layer: 2,
+    defaultWidthMeters: 0.5,
+    defaultHeightMeters: 0.5,
+    shape: 'circle',
+    color: LAYER_COLORS[2],
+    estimatedCostEur: 0.8,
+  },
+  {
+    catalogId: 'groundcover-thyme',
+    name: 'Creeping Thyme',
+    description: 'Aromatic groundcover; tolerates light foot traffic.',
+    layer: 2,
+    defaultWidthMeters: 0.5,
+    defaultHeightMeters: 0.5,
+    shape: 'rect',
+    color: LAYER_COLORS[2],
+    estimatedCostEur: 2.5,
+  },
+  {
+    catalogId: 'patch-strawberry',
+    name: 'Strawberry',
+    description: 'Low-growing fruiting plant; sends runners.',
+    layer: 2,
+    defaultWidthMeters: 0.5,
+    defaultHeightMeters: 0.5,
+    shape: 'circle',
+    color: LAYER_COLORS[2],
+    estimatedCostEur: 3.0,
+  },
+
+  // Layer 3 — Ground items
+  {
+    catalogId: 'raised-bed',
+    name: 'Raised Bed',
+    description: 'Timber-framed bed for intensive growing.',
+    layer: 3,
+    defaultWidthMeters: 1.2,
+    defaultHeightMeters: 2.4,
+    shape: 'rect',
+    color: LAYER_COLORS[3],
+    estimatedCostEur: 45.0,
+  },
+  {
+    catalogId: 'herb-basil',
+    name: 'Basil',
+    description: 'Annual herb; prefers warm sheltered spot.',
+    layer: 3,
+    defaultWidthMeters: 0.3,
+    defaultHeightMeters: 0.3,
+    shape: 'rect',
+    color: LAYER_COLORS[3],
+    estimatedCostEur: 1.5,
+  },
+  {
+    catalogId: 'herb-lavender',
+    name: 'Lavender',
+    description: 'Perennial herb; attracts pollinators.',
+    layer: 3,
+    defaultWidthMeters: 0.6,
+    defaultHeightMeters: 0.6,
+    shape: 'circle',
+    color: LAYER_COLORS[3],
+    estimatedCostEur: 4.0,
+  },
+
+  // Layer 4 — Low plants
+  {
+    catalogId: 'shrub-rosemary',
+    name: 'Rosemary',
+    description: 'Woody herb shrub; drought tolerant once established.',
+    layer: 4,
+    defaultWidthMeters: 1.0,
+    defaultHeightMeters: 1.0,
+    shape: 'circle',
+    color: LAYER_COLORS[4],
+    estimatedCostEur: 6.0,
+  },
+  {
+    catalogId: 'shrub-blueberry',
+    name: 'Blueberry Bush',
+    description: 'Deciduous shrub; needs acidic soil.',
+    layer: 4,
+    defaultWidthMeters: 1.2,
+    defaultHeightMeters: 1.2,
+    shape: 'circle',
+    color: LAYER_COLORS[4],
+    estimatedCostEur: 12.0,
+  },
+  {
+    catalogId: 'shrub-rose',
+    name: 'Rose Bush',
+    description: 'Ornamental shrub; many cultivars available.',
+    layer: 4,
+    defaultWidthMeters: 1.0,
+    defaultHeightMeters: 1.0,
+    shape: 'circle',
+    color: LAYER_COLORS[4],
+    estimatedCostEur: 15.0,
+  },
+
+  // Layer 5 — Trees
+  {
+    catalogId: 'tree-apple',
+    name: 'Apple Tree',
+    description: 'Deciduous fruit tree; full canopy at maturity.',
+    layer: 5,
+    defaultWidthMeters: 4.0,
+    defaultHeightMeters: 4.0,
+    shape: 'circle',
+    color: LAYER_COLORS[5],
+    estimatedCostEur: 35.0,
+  },
+  {
+    catalogId: 'tree-pear',
+    name: 'Pear Tree',
+    description: 'Deciduous fruit tree; upright habit.',
+    layer: 5,
+    defaultWidthMeters: 3.0,
+    defaultHeightMeters: 3.0,
+    shape: 'circle',
+    color: LAYER_COLORS[5],
+    estimatedCostEur: 30.0,
+  },
+  {
+    catalogId: 'tree-birch',
+    name: 'Silver Birch',
+    description: 'Ornamental deciduous tree; light canopy.',
+    layer: 5,
+    defaultWidthMeters: 5.0,
+    defaultHeightMeters: 5.0,
+    shape: 'circle',
+    color: LAYER_COLORS[5],
+    estimatedCostEur: 25.0,
+  },
+]
+
+export const LAYER_NAMES: Record<number, string> = {
+  1: 'Underground',
+  2: 'Ground Level',
+  3: 'Ground Items',
+  4: 'Low Plants',
+  5: 'Trees',
+}

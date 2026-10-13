@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Garden, GardenItem, Viewport } from '@/types/garden'
+import type { CatalogItem } from '@/types/garden'
+
+type AddItemPayload = {
+  catalogItem: CatalogItem
+  xMeters: number
+  yMeters: number
+}
 
 type GardenStore = {
   garden: Garden
@@ -9,6 +16,8 @@ type GardenStore = {
   setGardenWidth: (widthMeters: number) => void
   setGardenHeight: (heightMeters: number) => void
   setViewport: (viewport: Viewport) => void
+  addItem: (payload: AddItemPayload) => void
+  removeItem: (id: string) => void
 }
 
 const now = new Date().toISOString()
@@ -47,6 +56,33 @@ export const useGardenStore = create<GardenStore>()(
           garden: { ...state.garden, heightMeters, updatedAt: new Date().toISOString() },
         })),
       setViewport: (viewport) => set({ viewport }),
+      addItem: ({ catalogItem, xMeters, yMeters }) =>
+        set((state) => {
+          const newItem: GardenItem = {
+            id: crypto.randomUUID(),
+            catalogId: catalogItem.catalogId,
+            xMeters,
+            yMeters,
+            widthMeters: catalogItem.defaultWidthMeters,
+            heightMeters: catalogItem.defaultHeightMeters,
+            rotationDeg: 0,
+          }
+          return {
+            garden: {
+              ...state.garden,
+              items: [...state.garden.items, newItem],
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        }),
+      removeItem: (id) =>
+        set((state) => ({
+          garden: {
+            ...state.garden,
+            items: state.garden.items.filter((item) => item.id !== id),
+            updatedAt: new Date().toISOString(),
+          },
+        })),
     }),
     { name: 'green-grid-garden' }
   )
