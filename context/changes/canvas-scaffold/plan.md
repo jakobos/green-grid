@@ -91,15 +91,15 @@ Tests: none (CI workflow file; verified by build)
 
 ### Phase 2: Grid canvas with pan and zoom
 #### Automated
-- [ ] 2.1 (isolated) Canvas component renders a Konva Stage without errors
-- [ ] 2.2 (isolated) `vitest run` passes
+- [x] 2.1 (isolated) Canvas component renders a Konva Stage without errors — 000e5e2
+- [x] 2.2 (isolated) `vitest run` passes — 000e5e2
 #### Manual
-- [ ] 2.3 (agent-runnable) Grid lines visible at 1 m spacing; garden boundary rectangle visible
-- [ ] 2.4 (agent-runnable) Drag to pan, scroll to zoom; grid redraws on zoom
-- [ ] 2.5 (agent-runnable) Change garden dimensions in header; boundary updates on canvas
-- [ ] 2.6 (agent-runnable) Refresh page; viewport position and zoom restored
+- [x] 2.3 (agent-runnable) Grid lines visible at 1 m spacing; garden boundary rectangle visible — 000e5e2
+- [x] 2.4 (agent-runnable) Drag to pan, scroll to zoom; grid redraws on zoom — 000e5e2
+- [x] 2.5 (agent-runnable) Change garden dimensions in header; boundary updates on canvas — 000e5e2
+- [x] 2.6 (agent-runnable) Refresh page; viewport position and zoom restored — 000e5e2
 
 ### Phase 3: GitHub Pages deploy
 #### Automated
-- [ ] 3.1 (isolated) `vite build` completes without errors and `dist/` contains `index.html`
-- [ ] 3.2 (isolated) GitHub Actions workflow file is valid YAML and references the correct build command
+- [x] 3.1 (isolated) `vite build` completes without errors and `dist/` contains `index.html` — a7bb494
+- [x] 3.2 (isolated) GitHub Actions workflow file is valid YAML and references the correct build command — a7bb494
