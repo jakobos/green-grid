@@ -84,12 +84,12 @@ Tests: `src/components/Canvas.test.tsx`, `src/components/GardenItemShape.test.ts
 
 ### Phase 1: Catalog, store, and sidebar palette
 #### Automated
-- [ ] 1.1 (isolated) CatalogItem and expanded GardenItem types compile, catalog has items for all 5 layers
-- [ ] 1.2 (isolated) Store addItem creates a GardenItem with UUID and snapped position; removeItem removes by id
-- [ ] 1.3 (isolated) Sidebar renders catalog items grouped by layer with drag handles
-- [ ] 1.4 (isolated) `vitest run` passes
+- [x] 1.1 (isolated) CatalogItem and expanded GardenItem types compile, catalog has items for all 5 layers — 96aa187
+- [x] 1.2 (isolated) Store addItem creates a GardenItem with UUID and snapped position; removeItem removes by id — 96aa187
+- [x] 1.3 (isolated) Sidebar renders catalog items grouped by layer with drag handles — 96aa187
+- [x] 1.4 (isolated) `vitest run` passes — 96aa187
 #### Manual
-- [ ] 1.5 (agent-runnable) Dev server shows sidebar on the left with items grouped under layer headings; sidebar collapses
+- [x] 1.5 (agent-runnable) Dev server shows sidebar on the left with items grouped under layer headings; sidebar collapses — 96aa187
 
 ### Phase 2: Canvas drop, item rendering, and layer ordering
 #### Automated

@@ -2,16 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer } from 'react-konva'
 import type Konva from 'konva'
 import { useGardenStore } from '@/store/garden'
-import { Grid } from './Grid'
+import { Grid, PIXELS_PER_METER } from './Grid'
+import { GardenItemShape } from './GardenItemShape'
+import { CATALOG } from '@/data/catalog'
+import type { Layer as GardenLayer } from '@/types/garden'
 
 const ZOOM_SENSITIVITY = 0.001
 const MIN_SCALE = 0.1
 const MAX_SCALE = 5.0
 
+const GARDEN_LAYERS: GardenLayer[] = [1, 2, 3, 4, 5]
+
+// Static lookup: catalogId → CatalogItem
+const CATALOG_RECORD: Record<string, (typeof CATALOG)[number]> = Object.fromEntries(
+  CATALOG.map((c) => [c.catalogId, c])
+)
+
 export function Canvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
-  const { viewport, setViewport, garden } = useGardenStore()
+  const { viewport, setViewport, garden, addItem } = useGardenStore()
 
   useEffect(() => {
     const container = containerRef.current
@@ -63,8 +73,42 @@ export function Canvas(): JSX.Element {
     [viewport.scale, setViewport]
   )
 
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      const catalogId = e.dataTransfer.getData('application/x-catalog-id')
+      const catalogItem = CATALOG_RECORD[catalogId]
+      if (!catalogItem || !containerRef.current) return
+
+      const rect = containerRef.current.getBoundingClientRect()
+      const stageX = e.clientX - rect.left
+      const stageY = e.clientY - rect.top
+
+      // Invert the viewport transform: stage coords → garden coords
+      const gardenPixelX = (stageX - viewport.x) / viewport.scale
+      const gardenPixelY = (stageY - viewport.y) / viewport.scale
+
+      const xMeters = Math.round(gardenPixelX / PIXELS_PER_METER)
+      const yMeters = Math.round(gardenPixelY / PIXELS_PER_METER)
+
+      addItem({ catalogItem, xMeters, yMeters })
+    },
+    [viewport, addItem]
+  )
+
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-hidden"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      data-testid="canvas-container"
+    >
       {size.width > 0 && size.height > 0 && (
         <Stage
           width={size.width}
@@ -77,12 +121,30 @@ export function Canvas(): JSX.Element {
           onWheel={handleWheel}
           onDragEnd={handleDragEnd}
         >
+          {/* Grid layer — always below garden items */}
           <Layer>
             <Grid
               widthMeters={garden.widthMeters}
               heightMeters={garden.heightMeters}
             />
           </Layer>
+
+          {/* One Layer per garden layer, bottom (1) to top (5) */}
+          {GARDEN_LAYERS.map((layerNum) => {
+            const layerItems = garden.items.filter((item) => {
+              const cat = CATALOG_RECORD[item.catalogId]
+              return cat?.layer === layerNum
+            })
+            return (
+              <Layer key={layerNum} data-layer={layerNum}>
+                {layerItems.map((item) => {
+                  const cat = CATALOG_RECORD[item.catalogId]
+                  if (!cat) return null
+                  return <GardenItemShape key={item.id} item={item} catalogItem={cat} />
+                })}
+              </Layer>
+            )
+          })}
         </Stage>
       )}
     </div>
