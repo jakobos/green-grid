@@ -81,13 +81,13 @@ Tests: none (CI workflow file; verified by build)
 
 ### Phase 1: Project scaffold with header bar and persistence
 #### Automated
-- [ ] 1.1 (isolated) Vite dev server starts without errors
-- [ ] 1.2 (isolated) TypeScript compiles with `strict: true`, zero errors
-- [ ] 1.3 (isolated) Zustand store creates a default garden and round-trips through `persist`
-- [ ] 1.4 (isolated) Header renders garden name, width, and height; editing updates the store
-- [ ] 1.5 (isolated) `vitest run` passes
+- [x] 1.1 (isolated) Vite dev server starts without errors — 15d7c8e
+- [x] 1.2 (isolated) TypeScript compiles with `strict: true`, zero errors — 15d7c8e
+- [x] 1.3 (isolated) Zustand store creates a default garden and round-trips through `persist` — 15d7c8e
+- [x] 1.4 (isolated) Header renders garden name, width, and height; editing updates the store — 15d7c8e
+- [x] 1.5 (isolated) `vitest run` passes — 15d7c8e
 #### Manual
-- [ ] 1.6 (agent-runnable) Open dev server, edit garden name and dimensions in header, refresh page, values restored
+- [x] 1.6 (agent-runnable) Open dev server, edit garden name and dimensions in header, refresh page, values restored — 15d7c8e
 
 ### Phase 2: Grid canvas with pan and zoom
 #### Automated
