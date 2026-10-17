@@ -12,12 +12,16 @@ type AddItemPayload = {
 type GardenStore = {
   garden: Garden
   viewport: Viewport
+  selectedItemId: string | null
   setGardenName: (name: string) => void
   setGardenWidth: (widthMeters: number) => void
   setGardenHeight: (heightMeters: number) => void
   setViewport: (viewport: Viewport) => void
   addItem: (payload: AddItemPayload) => void
   removeItem: (id: string) => void
+  selectItem: (id: string) => void
+  clearSelection: () => void
+  moveItem: (id: string, xMeters: number, yMeters: number) => void
 }
 
 const now = new Date().toISOString()
@@ -43,6 +47,7 @@ export const useGardenStore = create<GardenStore>()(
     (set) => ({
       garden: defaultGarden,
       viewport: defaultViewport,
+      selectedItemId: null,
       setGardenName: (name) =>
         set((state) => ({
           garden: { ...state.garden, name, updatedAt: new Date().toISOString() },
@@ -83,7 +88,22 @@ export const useGardenStore = create<GardenStore>()(
             updatedAt: new Date().toISOString(),
           },
         })),
+      selectItem: (id) => set({ selectedItemId: id }),
+      clearSelection: () => set({ selectedItemId: null }),
+      moveItem: (id, xMeters, yMeters) =>
+        set((state) => ({
+          garden: {
+            ...state.garden,
+            items: state.garden.items.map((item) =>
+              item.id === id ? { ...item, xMeters, yMeters } : item
+            ),
+            updatedAt: new Date().toISOString(),
+          },
+        })),
     }),
-    { name: 'green-grid-garden' }
+    {
+      name: 'green-grid-garden',
+      partialize: (state) => ({ garden: state.garden, viewport: state.viewport }),
+    }
   )
 )

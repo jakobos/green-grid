@@ -27,7 +27,7 @@ const testCatalogItem: CatalogItem = {
 }
 
 beforeEach(() => {
-  useGardenStore.setState({ garden: testGarden, viewport: testViewport })
+  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null })
   localStorage.clear()
 })
 
@@ -110,6 +110,56 @@ describe('useGardenStore', () => {
       const remaining = useGardenStore.getState().garden.items
       expect(remaining).toHaveLength(1)
       expect(remaining[0].id).not.toBe(firstId)
+    })
+  })
+  describe('selectItem / clearSelection', () => {
+    it('sets selectedItemId to the given id', () => {
+      useGardenStore.getState().selectItem('item-abc')
+      expect(useGardenStore.getState().selectedItemId).toBe('item-abc')
+    })
+
+    it('clears selectedItemId to null', () => {
+      useGardenStore.getState().selectItem('item-abc')
+      useGardenStore.getState().clearSelection()
+      expect(useGardenStore.getState().selectedItemId).toBeNull()
+    })
+
+    it('replaces selection when selecting a different item', () => {
+      useGardenStore.getState().selectItem('item-1')
+      useGardenStore.getState().selectItem('item-2')
+      expect(useGardenStore.getState().selectedItemId).toBe('item-2')
+    })
+
+    it('does not persist selectedItemId to localStorage', () => {
+      useGardenStore.getState().selectItem('item-abc')
+      const raw = localStorage.getItem('green-grid-garden')
+      if (raw) {
+        const parsed = JSON.parse(raw) as { state: Record<string, unknown> }
+        expect(parsed.state).not.toHaveProperty('selectedItemId')
+      }
+    })
+  })
+
+  describe('moveItem', () => {
+    it('updates xMeters and yMeters for the given item', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const { items } = useGardenStore.getState().garden
+      const id = items[0].id
+      useGardenStore.getState().moveItem(id, 5, 3)
+      const moved = useGardenStore.getState().garden.items[0]
+      expect(moved.xMeters).toBe(5)
+      expect(moved.yMeters).toBe(3)
+    })
+
+    it('leaves other items unchanged when moving one', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 2, yMeters: 2 })
+      const { items } = useGardenStore.getState().garden
+      const firstId = items[0].id
+      useGardenStore.getState().moveItem(firstId, 10, 10)
+      const second = useGardenStore.getState().garden.items[1]
+      expect(second.xMeters).toBe(2)
+      expect(second.yMeters).toBe(2)
     })
   })
 })

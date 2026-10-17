@@ -21,7 +21,8 @@ const CATALOG_RECORD: Record<string, (typeof CATALOG)[number]> = Object.fromEntr
 export function Canvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
-  const { viewport, setViewport, garden, addItem } = useGardenStore()
+  const { viewport, setViewport, garden, addItem, selectedItemId, selectItem, clearSelection, moveItem } =
+    useGardenStore()
 
   useEffect(() => {
     const container = containerRef.current
@@ -62,7 +63,7 @@ export function Canvas(): JSX.Element {
     [viewport, setViewport]
   )
 
-  const handleDragEnd = useCallback(
+  const handleStageDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
       setViewport({
         x: e.target.x(),
@@ -71,6 +72,16 @@ export function Canvas(): JSX.Element {
       })
     },
     [viewport.scale, setViewport]
+  )
+
+  const handleStageClick = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Only deselect when clicking the Stage background (no bubbled item click)
+      if (e.target === e.target.getStage()) {
+        clearSelection()
+      }
+    },
+    [clearSelection]
   )
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -119,7 +130,8 @@ export function Canvas(): JSX.Element {
           scaleY={viewport.scale}
           draggable
           onWheel={handleWheel}
-          onDragEnd={handleDragEnd}
+          onDragEnd={handleStageDragEnd}
+          onClick={handleStageClick}
         >
           {/* Grid layer — always below garden items */}
           <Layer>
@@ -140,7 +152,16 @@ export function Canvas(): JSX.Element {
                 {layerItems.map((item) => {
                   const cat = CATALOG_RECORD[item.catalogId]
                   if (!cat) return null
-                  return <GardenItemShape key={item.id} item={item} catalogItem={cat} />
+                  return (
+                    <GardenItemShape
+                      key={item.id}
+                      item={item}
+                      catalogItem={cat}
+                      isSelected={selectedItemId === item.id}
+                      onSelect={() => selectItem(item.id)}
+                      onMoveEnd={(xMeters, yMeters) => moveItem(item.id, xMeters, yMeters)}
+                    />
+                  )
                 })}
               </Layer>
             )
