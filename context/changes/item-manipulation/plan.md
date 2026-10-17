@@ -67,9 +67,9 @@ Tests: `src/store/garden.test.ts`
 - [ ] 1.5 (agent-runnable) Drag selected item repositions it; snaps to 1 m grid
 ### Phase 2: Rotate and delete
 #### Automated
-- [ ] 2.1 (isolated) rotateItem increments rotationDeg by 90; wraps at 360
-- [ ] 2.2 (isolated) deleteItem removes item and clears selection
-- [ ] 2.3 (isolated) `vitest run` passes
+- [x] 2.1 (isolated) rotateItem increments rotationDeg by 90; wraps at 360 — 5ae789d
+- [x] 2.2 (isolated) deleteItem removes item and clears selection — 5ae789d
+- [x] 2.3 (isolated) `vitest run` passes — 5ae789d
 #### Manual
 - [ ] 2.4 (agent-runnable) Press R with item selected; item rotates 90° on canvas
 - [ ] 2.5 (agent-runnable) Press Delete; item removed from canvas. Toolbar delete button also works

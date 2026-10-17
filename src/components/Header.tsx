@@ -11,8 +11,11 @@ export function Header(): JSX.Element {
     selectedItemId,
     rotateItem,
     deleteItem,
+    undo,
+    redo,
+    past,
+    future,
   } = useGardenStore()
-
 
   return (
     <header className="flex items-center gap-4 border-b bg-background px-4 py-2">
@@ -60,26 +63,47 @@ export function Header(): JSX.Element {
         />
       </div>
 
-      {selectedItemId && (
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => rotateItem(selectedItemId)}
-            className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
-            aria-label="Rotate item 90°"
-          >
-            Rotate ↻
-          </button>
-          <button
-            type="button"
-            onClick={() => deleteItem(selectedItemId)}
-            className="rounded border bg-background px-3 py-1 text-sm hover:bg-destructive hover:text-destructive-foreground"
-            aria-label="Delete item"
-          >
-            Delete
-          </button>
-        </div>
-      )}
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          onClick={undo}
+          disabled={past.length === 0}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent disabled:opacity-40"
+          aria-label="Undo"
+        >
+          ↩ Undo
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          disabled={future.length === 0}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent disabled:opacity-40"
+          aria-label="Redo"
+        >
+          Redo ↪
+        </button>
+
+        {selectedItemId && (
+          <>
+            <button
+              type="button"
+              onClick={() => rotateItem(selectedItemId)}
+              className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+              aria-label="Rotate item 90°"
+            >
+              Rotate ↻
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteItem(selectedItemId)}
+              className="rounded border bg-background px-3 py-1 text-sm hover:bg-destructive hover:text-destructive-foreground"
+              aria-label="Delete item"
+            >
+              Delete
+            </button>
+          </>
+        )}
+      </div>
     </header>
   )
 }

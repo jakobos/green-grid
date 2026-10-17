@@ -27,7 +27,7 @@ const testCatalogItem: CatalogItem = {
 }
 
 beforeEach(() => {
-  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null })
+  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null, past: [], future: [] })
   localStorage.clear()
 })
 
@@ -207,6 +207,48 @@ describe('useGardenStore', () => {
       useGardenStore.getState().deleteItem(items[0].id)
       expect(useGardenStore.getState().garden.items).toHaveLength(1)
       expect(useGardenStore.getState().garden.items[0].id).toBe(items[1].id)
+    })
+  })
+
+  describe('undo / redo', () => {
+    it('undo after addItem restores the previous items array', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      expect(useGardenStore.getState().garden.items).toHaveLength(1)
+      useGardenStore.getState().undo()
+      expect(useGardenStore.getState().garden.items).toHaveLength(0)
+    })
+
+    it('redo after undo restores the undone state', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().undo()
+      expect(useGardenStore.getState().garden.items).toHaveLength(0)
+      useGardenStore.getState().redo()
+      expect(useGardenStore.getState().garden.items).toHaveLength(1)
+    })
+
+    it('history caps at 50 entries; oldest dropped', () => {
+      for (let i = 0; i < 55; i++) {
+        useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: i, yMeters: 0 })
+      }
+      expect(useGardenStore.getState().past).toHaveLength(50)
+    })
+
+    it('undo does nothing when history is empty', () => {
+      useGardenStore.getState().undo()
+      expect(useGardenStore.getState().garden.items).toHaveLength(0)
+    })
+
+    it('redo does nothing when future is empty', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().redo()
+      expect(useGardenStore.getState().garden.items).toHaveLength(1)
+    })
+
+    it('mutating after undo clears the redo future', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().undo()
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 1, yMeters: 1 })
+      expect(useGardenStore.getState().future).toHaveLength(0)
     })
   })
 })

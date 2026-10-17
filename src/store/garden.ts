@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware'
 import type { Garden, GardenItem, Viewport } from '@/types/garden'
 import type { CatalogItem } from '@/types/garden'
 
+const HISTORY_LIMIT = 50
+
 type AddItemPayload = {
   catalogItem: CatalogItem
   xMeters: number
@@ -13,6 +15,10 @@ type GardenStore = {
   garden: Garden
   viewport: Viewport
   selectedItemId: string | null
+  /** Snapshots of items before each mutating action (ephemeral). */
+  past: GardenItem[][]
+  /** Snapshots available to redo (ephemeral). */
+  future: GardenItem[][]
   setGardenName: (name: string) => void
   setGardenWidth: (widthMeters: number) => void
   setGardenHeight: (heightMeters: number) => void
@@ -24,6 +30,8 @@ type GardenStore = {
   moveItem: (id: string, xMeters: number, yMeters: number) => void
   rotateItem: (id: string) => void
   deleteItem: (id: string) => void
+  undo: () => void
+  redo: () => void
 }
 
 const now = new Date().toISOString()
@@ -44,12 +52,26 @@ const defaultViewport: Viewport = {
   scale: 1,
 }
 
+/** Push current items onto past, cap at HISTORY_LIMIT, clear future. */
+function pushHistory(
+  past: GardenItem[][],
+  currentItems: GardenItem[]
+): { past: GardenItem[][]; future: GardenItem[][] } {
+  const next = [...past, currentItems]
+  return {
+    past: next.length > HISTORY_LIMIT ? next.slice(next.length - HISTORY_LIMIT) : next,
+    future: [],
+  }
+}
+
 export const useGardenStore = create<GardenStore>()(
   persist(
     (set) => ({
       garden: defaultGarden,
       viewport: defaultViewport,
       selectedItemId: null,
+      past: [],
+      future: [],
       setGardenName: (name) =>
         set((state) => ({
           garden: { ...state.garden, name, updatedAt: new Date().toISOString() },
@@ -75,6 +97,7 @@ export const useGardenStore = create<GardenStore>()(
             rotationDeg: 0,
           }
           return {
+            ...pushHistory(state.past, state.garden.items),
             garden: {
               ...state.garden,
               items: [...state.garden.items, newItem],
@@ -84,6 +107,7 @@ export const useGardenStore = create<GardenStore>()(
         }),
       removeItem: (id) =>
         set((state) => ({
+          ...pushHistory(state.past, state.garden.items),
           garden: {
             ...state.garden,
             items: state.garden.items.filter((item) => item.id !== id),
@@ -94,6 +118,7 @@ export const useGardenStore = create<GardenStore>()(
       clearSelection: () => set({ selectedItemId: null }),
       moveItem: (id, xMeters, yMeters) =>
         set((state) => ({
+          ...pushHistory(state.past, state.garden.items),
           garden: {
             ...state.garden,
             items: state.garden.items.map((item) =>
@@ -104,6 +129,7 @@ export const useGardenStore = create<GardenStore>()(
         })),
       rotateItem: (id) =>
         set((state) => ({
+          ...pushHistory(state.past, state.garden.items),
           garden: {
             ...state.garden,
             items: state.garden.items.map((item) =>
@@ -114,6 +140,7 @@ export const useGardenStore = create<GardenStore>()(
         })),
       deleteItem: (id) =>
         set((state) => ({
+          ...pushHistory(state.past, state.garden.items),
           garden: {
             ...state.garden,
             items: state.garden.items.filter((item) => item.id !== id),
@@ -121,6 +148,34 @@ export const useGardenStore = create<GardenStore>()(
           },
           selectedItemId: null,
         })),
+      undo: () =>
+        set((state) => {
+          if (state.past.length === 0) return {}
+          const previous = state.past[state.past.length - 1]
+          return {
+            past: state.past.slice(0, -1),
+            future: [state.garden.items, ...state.future],
+            garden: {
+              ...state.garden,
+              items: previous,
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        }),
+      redo: () =>
+        set((state) => {
+          if (state.future.length === 0) return {}
+          const next = state.future[0]
+          return {
+            past: [...state.past, state.garden.items],
+            future: state.future.slice(1),
+            garden: {
+              ...state.garden,
+              items: next,
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        }),
     }),
     {
       name: 'green-grid-garden',

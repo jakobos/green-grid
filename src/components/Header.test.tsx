@@ -18,7 +18,7 @@ const testGarden: Garden = {
 const testViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 beforeEach(() => {
-  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null })
+  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null, past: [], future: [] })
   localStorage.clear()
 })
 
@@ -106,5 +106,47 @@ describe('Header', () => {
     fireEvent.click(screen.getByLabelText('Delete item'))
     expect(useGardenStore.getState().garden.items).toHaveLength(0)
     expect(useGardenStore.getState().selectedItemId).toBeNull()
+  })
+
+  it('undo button is disabled when there is no history', () => {
+    render(<Header />)
+    expect(screen.getByLabelText('Undo')).toBeDisabled()
+  })
+
+  it('redo button is disabled when there is no future', () => {
+    render(<Header />)
+    expect(screen.getByLabelText('Redo')).toBeDisabled()
+  })
+
+  it('undo button is enabled after an action', () => {
+    useGardenStore.getState().addItem({ catalogItem: {
+      catalogId: 'tree-apple', name: 'Apple Tree', description: '',
+      layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+    }, xMeters: 0, yMeters: 0 })
+    render(<Header />)
+    expect(screen.getByLabelText('Undo')).not.toBeDisabled()
+  })
+
+  it('redo button is enabled after undo', () => {
+    useGardenStore.getState().addItem({ catalogItem: {
+      catalogId: 'tree-apple', name: 'Apple Tree', description: '',
+      layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+    }, xMeters: 0, yMeters: 0 })
+    useGardenStore.getState().undo()
+    render(<Header />)
+    expect(screen.getByLabelText('Redo')).not.toBeDisabled()
+  })
+
+  it('calls undo when Undo button is clicked', () => {
+    useGardenStore.getState().addItem({ catalogItem: {
+      catalogId: 'tree-apple', name: 'Apple Tree', description: '',
+      layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+    }, xMeters: 0, yMeters: 0 })
+    render(<Header />)
+    fireEvent.click(screen.getByLabelText('Undo'))
+    expect(useGardenStore.getState().garden.items).toHaveLength(0)
   })
 })
