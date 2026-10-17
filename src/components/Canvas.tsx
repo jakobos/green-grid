@@ -20,7 +20,11 @@ const CATALOG_RECORD: Record<string, (typeof CATALOG)[number]> = Object.fromEntr
 
 export function Canvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<Konva.Stage>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
+  const isPanning = useRef(false)
+  const didPan = useRef(false)
+  const lastPointerPos = useRef({ x: 0, y: 0 })
   const { viewport, setViewport, garden, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem, undo, redo } =
     useGardenStore()
 
@@ -87,11 +91,43 @@ export function Canvas(): JSX.Element {
     [viewport, setViewport]
   )
 
-  const handleStageDragEnd = useCallback(
-    (e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleMouseDown = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Only pan when clicking on the Stage background (not on items)
+      if (e.target !== e.target.getStage()) return
+      isPanning.current = true
+      didPan.current = false
+      const pos = e.target.getStage()!.getPointerPosition()!
+      lastPointerPos.current = pos
+    },
+    []
+  )
+
+  const handleMouseMove = useCallback(
+    () => {
+      if (!isPanning.current) return
+      const stage = stageRef.current
+      if (!stage) return
+      const pos = stage.getPointerPosition()!
+      const dx = pos.x - lastPointerPos.current.x
+      const dy = pos.y - lastPointerPos.current.y
+      lastPointerPos.current = pos
+      didPan.current = true
+      stage.x(stage.x() + dx)
+      stage.y(stage.y() + dy)
+    },
+    []
+  )
+
+  const handleMouseUp = useCallback(
+    () => {
+      if (!isPanning.current) return
+      isPanning.current = false
+      const stage = stageRef.current
+      if (!stage) return
       setViewport({
-        x: e.target.x(),
-        y: e.target.y(),
+        x: stage.x(),
+        y: stage.y(),
         scale: viewport.scale,
       })
     },
@@ -100,6 +136,11 @@ export function Canvas(): JSX.Element {
 
   const handleStageClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Don't deselect after a pan gesture
+      if (didPan.current) {
+        didPan.current = false
+        return
+      }
       // Only deselect when clicking the Stage background (no bubbled item click)
       if (e.target === e.target.getStage()) {
         clearSelection()
@@ -146,15 +187,17 @@ export function Canvas(): JSX.Element {
     >
       {size.width > 0 && size.height > 0 && (
         <Stage
+          ref={stageRef}
           width={size.width}
           height={size.height}
           x={viewport.x}
           y={viewport.y}
           scaleX={viewport.scale}
           scaleY={viewport.scale}
-          draggable
           onWheel={handleWheel}
-          onDragEnd={handleStageDragEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
           onClick={handleStageClick}
         >
           {/* Grid layer — always below garden items */}
