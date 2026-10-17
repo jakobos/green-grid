@@ -59,13 +59,12 @@ Tests: `src/store/garden.test.ts`
 
 ### Phase 1: Selection and move
 #### Automated
-- [ ] 1.1 (isolated) Store tracks selectedItemId; selectItem and clearSelection work
-- [ ] 1.2 (isolated) Moving an item updates xMeters/yMeters snapped to grid
-- [ ] 1.3 (isolated) `vitest run` passes
+- [x] 1.1 (isolated) Store tracks selectedItemId; selectItem and clearSelection work — b5e9f0f
+- [x] 1.2 (isolated) Moving an item updates xMeters/yMeters snapped to grid — b5e9f0f
+- [x] 1.3 (isolated) `vitest run` passes — b5e9f0f
 #### Manual
 - [ ] 1.4 (agent-runnable) Click item on canvas shows selection highlight; click canvas deselects
 - [ ] 1.5 (agent-runnable) Drag selected item repositions it; snaps to 1 m grid
-
 ### Phase 2: Rotate and delete
 #### Automated
 - [ ] 2.1 (isolated) rotateItem increments rotationDeg by 90; wraps at 360

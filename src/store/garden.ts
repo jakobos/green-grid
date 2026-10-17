@@ -22,6 +22,8 @@ type GardenStore = {
   selectItem: (id: string) => void
   clearSelection: () => void
   moveItem: (id: string, xMeters: number, yMeters: number) => void
+  rotateItem: (id: string) => void
+  deleteItem: (id: string) => void
 }
 
 const now = new Date().toISOString()
@@ -99,6 +101,25 @@ export const useGardenStore = create<GardenStore>()(
             ),
             updatedAt: new Date().toISOString(),
           },
+        })),
+      rotateItem: (id) =>
+        set((state) => ({
+          garden: {
+            ...state.garden,
+            items: state.garden.items.map((item) =>
+              item.id === id ? { ...item, rotationDeg: (item.rotationDeg + 90) % 360 } : item
+            ),
+            updatedAt: new Date().toISOString(),
+          },
+        })),
+      deleteItem: (id) =>
+        set((state) => ({
+          garden: {
+            ...state.garden,
+            items: state.garden.items.filter((item) => item.id !== id),
+            updatedAt: new Date().toISOString(),
+          },
+          selectedItemId: null,
         })),
     }),
     {

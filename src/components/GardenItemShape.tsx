@@ -18,10 +18,14 @@ export function GardenItemShape({
   onSelect,
   onMoveEnd,
 }: GardenItemShapeProps): JSX.Element {
-  const x = item.xMeters * PIXELS_PER_METER
-  const y = item.yMeters * PIXELS_PER_METER
   const w = item.widthMeters * PIXELS_PER_METER
   const h = item.heightMeters * PIXELS_PER_METER
+
+  // Position the group so its center is at (xMeters*PPM + w/2, yMeters*PPM + h/2).
+  // offsetX/offsetY shift the rotation anchor to the center; the visual top-left
+  // stays at (xMeters*PPM, yMeters*PPM) regardless of rotation.
+  const cx = item.xMeters * PIXELS_PER_METER + w / 2
+  const cy = item.yMeters * PIXELS_PER_METER + h / 2
 
   const handleClick = (e: Konva.KonvaEventObject<MouseEvent>): void => {
     e.cancelBubble = true
@@ -29,15 +33,19 @@ export function GardenItemShape({
   }
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>): void => {
-    const newXMeters = Math.round(e.target.x() / PIXELS_PER_METER)
-    const newYMeters = Math.round(e.target.y() / PIXELS_PER_METER)
+    // e.target.x() is the center x after drag; convert back to top-left meters
+    const newXMeters = Math.round((e.target.x() - w / 2) / PIXELS_PER_METER)
+    const newYMeters = Math.round((e.target.y() - h / 2) / PIXELS_PER_METER)
     onMoveEnd(newXMeters, newYMeters)
   }
 
   return (
     <Group
-      x={x}
-      y={y}
+      x={cx}
+      y={cy}
+      offsetX={w / 2}
+      offsetY={h / 2}
+      rotation={item.rotationDeg}
       draggable={isSelected}
       onClick={handleClick}
       onDragEnd={handleDragEnd}

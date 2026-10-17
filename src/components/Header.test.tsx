@@ -18,7 +18,7 @@ const testGarden: Garden = {
 const testViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 beforeEach(() => {
-  useGardenStore.setState({ garden: testGarden, viewport: testViewport })
+  useGardenStore.setState({ garden: testGarden, viewport: testViewport, selectedItemId: null })
   localStorage.clear()
 })
 
@@ -66,5 +66,45 @@ describe('Header', () => {
     const widthInput = screen.getByDisplayValue('20')
     fireEvent.change(widthInput, { target: { value: '200' } })
     expect(useGardenStore.getState().garden.widthMeters).toBe(20)
+  })
+
+  it('does not show rotate and delete buttons when nothing is selected', () => {
+    render(<Header />)
+    expect(screen.queryByLabelText('Rotate item 90°')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Delete item')).not.toBeInTheDocument()
+  })
+
+  it('shows rotate and delete buttons when an item is selected', () => {
+    useGardenStore.setState({ selectedItemId: 'item-1' })
+    render(<Header />)
+    expect(screen.getByLabelText('Rotate item 90°')).toBeInTheDocument()
+    expect(screen.getByLabelText('Delete item')).toBeInTheDocument()
+  })
+
+  it('calls rotateItem when Rotate button is clicked', () => {
+    useGardenStore.getState().addItem({ catalogItem: {
+      catalogId: 'tree-apple', name: 'Apple Tree', description: '',
+      layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+    }, xMeters: 0, yMeters: 0 })
+    const id = useGardenStore.getState().garden.items[0].id
+    useGardenStore.setState({ selectedItemId: id })
+    render(<Header />)
+    fireEvent.click(screen.getByLabelText('Rotate item 90°'))
+    expect(useGardenStore.getState().garden.items[0].rotationDeg).toBe(90)
+  })
+
+  it('calls deleteItem when Delete button is clicked', () => {
+    useGardenStore.getState().addItem({ catalogItem: {
+      catalogId: 'tree-apple', name: 'Apple Tree', description: '',
+      layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+    }, xMeters: 0, yMeters: 0 })
+    const id = useGardenStore.getState().garden.items[0].id
+    useGardenStore.setState({ selectedItemId: id })
+    render(<Header />)
+    fireEvent.click(screen.getByLabelText('Delete item'))
+    expect(useGardenStore.getState().garden.items).toHaveLength(0)
+    expect(useGardenStore.getState().selectedItemId).toBeNull()
   })
 })

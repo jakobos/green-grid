@@ -3,7 +3,16 @@ import { Label } from '@/components/ui/label'
 import { useGardenStore } from '@/store/garden'
 
 export function Header(): JSX.Element {
-  const { garden, setGardenName, setGardenWidth, setGardenHeight } = useGardenStore()
+  const {
+    garden,
+    setGardenName,
+    setGardenWidth,
+    setGardenHeight,
+    selectedItemId,
+    rotateItem,
+    deleteItem,
+  } = useGardenStore()
+
 
   return (
     <header className="flex items-center gap-4 border-b bg-background px-4 py-2">
@@ -50,6 +59,27 @@ export function Header(): JSX.Element {
           className="w-20"
         />
       </div>
+
+      {selectedItemId && (
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => rotateItem(selectedItemId)}
+            className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+            aria-label="Rotate item 90°"
+          >
+            Rotate ↻
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteItem(selectedItemId)}
+            className="rounded border bg-background px-3 py-1 text-sm hover:bg-destructive hover:text-destructive-foreground"
+            aria-label="Delete item"
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </header>
   )
 }

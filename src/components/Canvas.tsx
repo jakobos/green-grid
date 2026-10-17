@@ -21,7 +21,7 @@ const CATALOG_RECORD: Record<string, (typeof CATALOG)[number]> = Object.fromEntr
 export function Canvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
-  const { viewport, setViewport, garden, addItem, selectedItemId, selectItem, clearSelection, moveItem } =
+  const { viewport, setViewport, garden, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem } =
     useGardenStore()
 
   useEffect(() => {
@@ -40,6 +40,21 @@ export function Canvas(): JSX.Element {
     observer.observe(container)
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (!selectedItemId) return
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault()
+        rotateItem(selectedItemId)
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        deleteItem(selectedItemId)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedItemId, rotateItem, deleteItem])
 
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {

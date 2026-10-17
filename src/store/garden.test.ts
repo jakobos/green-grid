@@ -162,4 +162,51 @@ describe('useGardenStore', () => {
       expect(second.yMeters).toBe(2)
     })
   })
+
+  describe('rotateItem', () => {
+    it('increments rotationDeg by 90', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const id = useGardenStore.getState().garden.items[0].id
+      useGardenStore.getState().rotateItem(id)
+      expect(useGardenStore.getState().garden.items[0].rotationDeg).toBe(90)
+    })
+
+    it('wraps at 360', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const id = useGardenStore.getState().garden.items[0].id
+      useGardenStore.getState().rotateItem(id)
+      useGardenStore.getState().rotateItem(id)
+      useGardenStore.getState().rotateItem(id)
+      useGardenStore.getState().rotateItem(id)
+      expect(useGardenStore.getState().garden.items[0].rotationDeg).toBe(0)
+    })
+
+    it('leaves other items unchanged', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 1, yMeters: 1 })
+      const items = useGardenStore.getState().garden.items
+      useGardenStore.getState().rotateItem(items[0].id)
+      expect(useGardenStore.getState().garden.items[1].rotationDeg).toBe(0)
+    })
+  })
+
+  describe('deleteItem', () => {
+    it('removes the item and clears selectedItemId', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const id = useGardenStore.getState().garden.items[0].id
+      useGardenStore.getState().selectItem(id)
+      useGardenStore.getState().deleteItem(id)
+      expect(useGardenStore.getState().garden.items).toHaveLength(0)
+      expect(useGardenStore.getState().selectedItemId).toBeNull()
+    })
+
+    it('leaves other items intact', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 5, yMeters: 5 })
+      const { items } = useGardenStore.getState().garden
+      useGardenStore.getState().deleteItem(items[0].id)
+      expect(useGardenStore.getState().garden.items).toHaveLength(1)
+      expect(useGardenStore.getState().garden.items[0].id).toBe(items[1].id)
+    })
+  })
 })
