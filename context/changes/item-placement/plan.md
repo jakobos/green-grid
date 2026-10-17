@@ -84,19 +84,19 @@ Tests: `src/components/Canvas.test.tsx`, `src/components/GardenItemShape.test.ts
 
 ### Phase 1: Catalog, store, and sidebar palette
 #### Automated
-- [ ] 1.1 (isolated) CatalogItem and expanded GardenItem types compile, catalog has items for all 5 layers
-- [ ] 1.2 (isolated) Store addItem creates a GardenItem with UUID and snapped position; removeItem removes by id
-- [ ] 1.3 (isolated) Sidebar renders catalog items grouped by layer with drag handles
-- [ ] 1.4 (isolated) `vitest run` passes
+- [x] 1.1 (isolated) CatalogItem and expanded GardenItem types compile, catalog has items for all 5 layers — 96aa187
+- [x] 1.2 (isolated) Store addItem creates a GardenItem with UUID and snapped position; removeItem removes by id — 96aa187
+- [x] 1.3 (isolated) Sidebar renders catalog items grouped by layer with drag handles — 96aa187
+- [x] 1.4 (isolated) `vitest run` passes — 96aa187
 #### Manual
-- [ ] 1.5 (agent-runnable) Dev server shows sidebar on the left with items grouped under layer headings; sidebar collapses
+- [x] 1.5 (agent-runnable) Dev server shows sidebar on the left with items grouped under layer headings; sidebar collapses — 96aa187
 
 ### Phase 2: Canvas drop, item rendering, and layer ordering
 #### Automated
-- [ ] 2.1 (isolated) GardenItemShape renders the correct shape and label for a catalog item
-- [ ] 2.2 (isolated) Drop handler converts screen coords to grid-snapped garden coords
-- [ ] 2.3 (isolated) `vitest run` passes
+- [x] 2.1 (isolated) GardenItemShape renders the correct shape and label for a catalog item — 5614e6b
+- [x] 2.2 (isolated) Drop handler converts screen coords to grid-snapped garden coords — 5614e6b
+- [x] 2.3 (isolated) `vitest run` passes — 5614e6b
 #### Manual
-- [ ] 2.4 (agent-runnable) Drag item from sidebar onto canvas; colored shape appears at snapped position
-- [ ] 2.5 (agent-runnable) Items from different layers render in correct order (underground below trees)
-- [ ] 2.6 (agent-runnable) Refresh page; placed items still visible on canvas
+- [x] 2.4 (agent-runnable) Drag item from sidebar onto canvas; colored shape appears at snapped position — 5614e6b
+- [x] 2.5 (agent-runnable) Items from different layers render in correct order (underground below trees) — 5614e6b
+- [x] 2.6 (agent-runnable) Refresh page; placed items still visible on canvas — 5614e6b
