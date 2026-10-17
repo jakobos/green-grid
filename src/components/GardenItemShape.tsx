@@ -57,7 +57,6 @@ export function GardenItemShape({
           radius={Math.min(w, h) / 2}
           fill={catalogItem.color}
           opacity={0.7}
-          listening={false}
         />
       ) : (
         <Rect
@@ -68,7 +67,6 @@ export function GardenItemShape({
           fill={catalogItem.color}
           opacity={0.7}
           cornerRadius={3}
-          listening={false}
         />
       )}
       <Text
