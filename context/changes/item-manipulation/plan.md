@@ -76,10 +76,10 @@ Tests: `src/store/garden.test.ts`
 
 ### Phase 3: Undo and redo
 #### Automated
-- [ ] 3.1 (isolated) Undo after addItem restores previous items array
-- [ ] 3.2 (isolated) Redo after undo restores the undone state
-- [ ] 3.3 (isolated) History caps at 50 entries; oldest dropped
-- [ ] 3.4 (isolated) `vitest run` passes
+- [x] 3.1 (isolated) Undo after addItem restores previous items array — dda0830
+- [x] 3.2 (isolated) Redo after undo restores the undone state — dda0830
+- [x] 3.3 (isolated) History caps at 50 entries; oldest dropped — dda0830
+- [x] 3.4 (isolated) `vitest run` passes — dda0830
 #### Manual
 - [ ] 3.5 (agent-runnable) Ctrl+Z undoes last action; Ctrl+Shift+Z redoes it
 - [ ] 3.6 (agent-runnable) Undo/redo header buttons enabled/disabled correctly
