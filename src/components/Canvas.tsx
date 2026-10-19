@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer } from 'react-konva'
 import type Konva from 'konva'
-import { useGardenStore } from '@/store/garden'
+import { useGardenStore, useActiveGarden, useActiveViewport } from '@/store/garden'
 import { Grid, PIXELS_PER_METER } from './Grid'
 import { GardenItemShape } from './GardenItemShape'
 import { CATALOG } from '@/data/catalog'
@@ -25,7 +25,9 @@ export function Canvas(): JSX.Element {
   const isPanning = useRef(false)
   const didPan = useRef(false)
   const lastPointerPos = useRef({ x: 0, y: 0 })
-  const { viewport, setViewport, garden, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem, undo, redo } =
+  const garden = useActiveGarden()
+  const viewport = useActiveViewport()
+  const { setViewport, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem, undo, redo } =
     useGardenStore()
 
   useEffect(() => {

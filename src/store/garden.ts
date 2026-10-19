@@ -12,8 +12,9 @@ type AddItemPayload = {
 }
 
 type GardenStore = {
-  garden: Garden
-  viewport: Viewport
+  gardens: Garden[]
+  activeGardenId: string
+  viewports: Record<string, Viewport>
   selectedItemId: string | null
   /** Snapshots of items before each mutating action (ephemeral). */
   past: GardenItem[][]
@@ -32,18 +33,22 @@ type GardenStore = {
   deleteItem: (id: string) => void
   undo: () => void
   redo: () => void
+  createGarden: () => void
+  switchGarden: (id: string) => void
+  deleteGarden: (id: string) => void
 }
 
-const now = new Date().toISOString()
-
-const defaultGarden: Garden = {
-  id: crypto.randomUUID(),
-  name: 'My Garden',
-  widthMeters: 20,
-  heightMeters: 20,
-  items: [] as GardenItem[],
-  createdAt: now,
-  updatedAt: now,
+function makeGarden(name: string): Garden {
+  const now = new Date().toISOString()
+  return {
+    id: crypto.randomUUID(),
+    name,
+    widthMeters: 20,
+    heightMeters: 20,
+    items: [],
+    createdAt: now,
+    updatedAt: now,
+  }
 }
 
 const defaultViewport: Viewport = {
@@ -51,6 +56,8 @@ const defaultViewport: Viewport = {
   y: 0,
   scale: 1,
 }
+
+const initialGarden = makeGarden('My Garden')
 
 /** Push current items onto past, cap at HISTORY_LIMIT, clear future. */
 function pushHistory(
@@ -64,29 +71,60 @@ function pushHistory(
   }
 }
 
+/** Replace the active garden in the gardens array. */
+function updateActiveGarden(
+  gardens: Garden[],
+  activeGardenId: string,
+  updater: (garden: Garden) => Garden
+): Garden[] {
+  return gardens.map((g) => (g.id === activeGardenId ? updater(g) : g))
+}
+
 export const useGardenStore = create<GardenStore>()(
   persist(
-    (set) => ({
-      garden: defaultGarden,
-      viewport: defaultViewport,
+    (set, get) => ({
+      gardens: [initialGarden],
+      activeGardenId: initialGarden.id,
+      viewports: { [initialGarden.id]: defaultViewport },
       selectedItemId: null,
       past: [],
       future: [],
+
       setGardenName: (name) =>
         set((state) => ({
-          garden: { ...state.garden, name, updatedAt: new Date().toISOString() },
+          gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+            ...g,
+            name,
+            updatedAt: new Date().toISOString(),
+          })),
         })),
+
       setGardenWidth: (widthMeters) =>
         set((state) => ({
-          garden: { ...state.garden, widthMeters, updatedAt: new Date().toISOString() },
+          gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+            ...g,
+            widthMeters,
+            updatedAt: new Date().toISOString(),
+          })),
         })),
+
       setGardenHeight: (heightMeters) =>
         set((state) => ({
-          garden: { ...state.garden, heightMeters, updatedAt: new Date().toISOString() },
+          gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+            ...g,
+            heightMeters,
+            updatedAt: new Date().toISOString(),
+          })),
         })),
-      setViewport: (viewport) => set({ viewport }),
+
+      setViewport: (viewport) =>
+        set((state) => ({
+          viewports: { ...state.viewports, [state.activeGardenId]: viewport },
+        })),
+
       addItem: ({ catalogItem, xMeters, yMeters }) =>
         set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
           const newItem: GardenItem = {
             id: crypto.randomUUID(),
             catalogId: catalogItem.catalogId,
@@ -97,89 +135,181 @@ export const useGardenStore = create<GardenStore>()(
             rotationDeg: 0,
           }
           return {
-            ...pushHistory(state.past, state.garden.items),
-            garden: {
-              ...state.garden,
-              items: [...state.garden.items, newItem],
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: [...g.items, newItem],
               updatedAt: new Date().toISOString(),
-            },
+            })),
           }
         }),
+
       removeItem: (id) =>
-        set((state) => ({
-          ...pushHistory(state.past, state.garden.items),
-          garden: {
-            ...state.garden,
-            items: state.garden.items.filter((item) => item.id !== id),
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+        set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+          return {
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: g.items.filter((item) => item.id !== id),
+              updatedAt: new Date().toISOString(),
+            })),
+          }
+        }),
+
       selectItem: (id) => set({ selectedItemId: id }),
       clearSelection: () => set({ selectedItemId: null }),
+
       moveItem: (id, xMeters, yMeters) =>
-        set((state) => ({
-          ...pushHistory(state.past, state.garden.items),
-          garden: {
-            ...state.garden,
-            items: state.garden.items.map((item) =>
-              item.id === id ? { ...item, xMeters, yMeters } : item
-            ),
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+        set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+          return {
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: g.items.map((item) =>
+                item.id === id ? { ...item, xMeters, yMeters } : item
+              ),
+              updatedAt: new Date().toISOString(),
+            })),
+          }
+        }),
+
       rotateItem: (id) =>
-        set((state) => ({
-          ...pushHistory(state.past, state.garden.items),
-          garden: {
-            ...state.garden,
-            items: state.garden.items.map((item) =>
-              item.id === id ? { ...item, rotationDeg: (item.rotationDeg + 90) % 360 } : item
-            ),
-            updatedAt: new Date().toISOString(),
-          },
-        })),
+        set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+          return {
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: g.items.map((item) =>
+                item.id === id ? { ...item, rotationDeg: (item.rotationDeg + 90) % 360 } : item
+              ),
+              updatedAt: new Date().toISOString(),
+            })),
+          }
+        }),
+
       deleteItem: (id) =>
-        set((state) => ({
-          ...pushHistory(state.past, state.garden.items),
-          garden: {
-            ...state.garden,
-            items: state.garden.items.filter((item) => item.id !== id),
-            updatedAt: new Date().toISOString(),
-          },
-          selectedItemId: null,
-        })),
+        set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+          return {
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: g.items.filter((item) => item.id !== id),
+              updatedAt: new Date().toISOString(),
+            })),
+            selectedItemId: null,
+          }
+        }),
+
       undo: () =>
         set((state) => {
           if (state.past.length === 0) return {}
           const previous = state.past[state.past.length - 1]
           return {
             past: state.past.slice(0, -1),
-            future: [state.garden.items, ...state.future],
-            garden: {
-              ...state.garden,
+            future: [get().gardens.find((g) => g.id === state.activeGardenId)!.items, ...state.future],
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
               items: previous,
               updatedAt: new Date().toISOString(),
-            },
+            })),
           }
         }),
+
       redo: () =>
         set((state) => {
           if (state.future.length === 0) return {}
           const next = state.future[0]
           return {
-            past: [...state.past, state.garden.items],
+            past: [...state.past, get().gardens.find((g) => g.id === state.activeGardenId)!.items],
             future: state.future.slice(1),
-            garden: {
-              ...state.garden,
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
               items: next,
               updatedAt: new Date().toISOString(),
+            })),
+          }
+        }),
+
+      createGarden: () => {
+        const garden = makeGarden('New Garden')
+        set((state) => ({
+          gardens: [...state.gardens, garden],
+          activeGardenId: garden.id,
+          viewports: { ...state.viewports, [garden.id]: { ...defaultViewport } },
+          selectedItemId: null,
+          past: [],
+          future: [],
+        }))
+      },
+
+      switchGarden: (id) =>
+        set((state) => {
+          if (id === state.activeGardenId) return {}
+          if (!state.gardens.some((g) => g.id === id)) return {}
+          return {
+            activeGardenId: id,
+            viewports: {
+              ...state.viewports,
+              [id]: state.viewports[id] ?? { ...defaultViewport },
             },
+            selectedItemId: null,
+            past: [],
+            future: [],
+          }
+        }),
+
+      deleteGarden: (id) =>
+        set((state) => {
+          if (state.gardens.length <= 1) return {}
+          const remaining = state.gardens.filter((g) => g.id !== id)
+          const newViewports = { ...state.viewports }
+          delete newViewports[id]
+          const needsSwitch = state.activeGardenId === id
+          return {
+            gardens: remaining,
+            activeGardenId: needsSwitch ? remaining[0].id : state.activeGardenId,
+            viewports: newViewports,
+            selectedItemId: needsSwitch ? null : state.selectedItemId,
+            past: needsSwitch ? [] : state.past,
+            future: needsSwitch ? [] : state.future,
           }
         }),
     }),
     {
       name: 'green-grid-garden',
-      partialize: (state) => ({ garden: state.garden, viewport: state.viewport }),
+      version: 1,
+      partialize: (state) => ({
+        gardens: state.gardens,
+        activeGardenId: state.activeGardenId,
+        viewports: state.viewports,
+      }),
+      migrate: (persisted: unknown, version: number) => {
+        if (version === 0) {
+          const old = persisted as { garden?: Garden; viewport?: Viewport }
+          const garden = old.garden ?? makeGarden('My Garden')
+          const viewport = old.viewport ?? { ...defaultViewport }
+          return {
+            gardens: [garden],
+            activeGardenId: garden.id,
+            viewports: { [garden.id]: viewport },
+          }
+        }
+        return persisted
+      },
     }
   )
 )
+
+/** Select the active garden from the store. */
+export function useActiveGarden(): Garden {
+  return useGardenStore((state) => state.gardens.find((g) => g.id === state.activeGardenId)!)
+}
+
+/** Select the active garden's viewport from the store. */
+export function useActiveViewport(): Viewport {
+  return useGardenStore((state) => state.viewports[state.activeGardenId] ?? defaultViewport)
+}

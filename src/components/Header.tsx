@@ -1,10 +1,12 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useGardenStore } from '@/store/garden'
+import { useGardenStore, useActiveGarden } from '@/store/garden'
 
 export function Header(): JSX.Element {
+  const garden = useActiveGarden()
   const {
-    garden,
+    gardens,
+    activeGardenId,
     setGardenName,
     setGardenWidth,
     setGardenHeight,
@@ -15,6 +17,9 @@ export function Header(): JSX.Element {
     redo,
     past,
     future,
+    createGarden,
+    switchGarden,
+    deleteGarden,
   } = useGardenStore()
 
   return (
@@ -22,12 +27,46 @@ export function Header(): JSX.Element {
       <span className="text-sm font-semibold text-foreground">Green Grid</span>
 
       <div className="flex items-center gap-2">
-        <Label htmlFor="garden-name">Garden</Label>
+        <Label htmlFor="garden-select">Garden</Label>
+        <select
+          id="garden-select"
+          value={activeGardenId}
+          onChange={(e) => switchGarden(e.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+          aria-label="Select garden"
+        >
+          {gardens.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={createGarden}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+          aria-label="New garden"
+        >
+          + New
+        </button>
+        <button
+          type="button"
+          onClick={() => deleteGarden(activeGardenId)}
+          disabled={gardens.length <= 1}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-destructive hover:text-destructive-foreground disabled:opacity-40"
+          aria-label="Delete garden"
+        >
+          Delete
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Label htmlFor="garden-name">Name</Label>
         <Input
           id="garden-name"
           value={garden.name}
           onChange={(e) => setGardenName(e.target.value)}
-          className="w-48"
+          className="w-40"
         />
       </div>
 

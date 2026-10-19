@@ -54,7 +54,14 @@ const testGarden: Garden = {
 const testViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 beforeEach(() => {
-  useGardenStore.setState({ garden: testGarden, viewport: testViewport })
+  useGardenStore.setState({
+    gardens: [testGarden],
+    activeGardenId: testGarden.id,
+    viewports: { [testGarden.id]: testViewport },
+    selectedItemId: null,
+    past: [],
+    future: [],
+  })
   localStorage.clear()
   observerCallbacks.clear()
 })
@@ -105,7 +112,8 @@ describe('Canvas', () => {
       // clientY=170 → stageY=120; 120/60=2m
       dispatchDrop(container, 'tree-apple', 220, 170)
 
-      const { items } = useGardenStore.getState().garden
+      const state = useGardenStore.getState()
+      const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
       expect(items).toHaveLength(1)
       expect(items[0].xMeters).toBe(2)
       expect(items[0].yMeters).toBe(2)
@@ -125,7 +133,8 @@ describe('Canvas', () => {
       // clientY=60 → 60/60=1.0m → rounds to 1
       dispatchDrop(container, 'tree-apple', 95, 60)
 
-      const { items } = useGardenStore.getState().garden
+      const state = useGardenStore.getState()
+      const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
       expect(items).toHaveLength(1)
       expect(items[0].xMeters).toBe(2)
       expect(items[0].yMeters).toBe(1)
@@ -137,7 +146,8 @@ describe('Canvas', () => {
       const container = screen.getByTestId('canvas-container')
       dispatchDrop(container, 'does-not-exist', 100, 100)
 
-      expect(useGardenStore.getState().garden.items).toHaveLength(0)
+      const state = useGardenStore.getState()
+      expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(0)
     })
   })
 
@@ -158,8 +168,9 @@ describe('Canvas', () => {
         rotationDeg: 0,
       }
       useGardenStore.setState({
-        garden: { ...testGarden, items: [item] },
-        viewport: testViewport,
+        gardens: [{ ...testGarden, items: [item] }],
+        activeGardenId: testGarden.id,
+        viewports: { [testGarden.id]: testViewport },
       })
       render(<Canvas />)
       const shape = screen.getByTestId('garden-item-shape')
