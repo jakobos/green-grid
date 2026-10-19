@@ -4,10 +4,10 @@ title: Create, rename, delete, and switch between gardens
 type: feature
 effort: mvp
 slice: 4
-status: implemented
+status: archived
 created: 2026-10-19
 updated: 2026-10-19
-archived_at: null
+archived_at: 2026-10-19
 ---
 
 ## Notes
