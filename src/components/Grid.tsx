@@ -20,6 +20,7 @@ export function Grid({ widthMeters, heightMeters }: GridProps): JSX.Element {
         points={[x, 0, x, canvasHeight]}
         stroke="#d1d5db"
         strokeWidth={1}
+        listening={false}
       />
     )
   }
@@ -33,6 +34,7 @@ export function Grid({ widthMeters, heightMeters }: GridProps): JSX.Element {
         points={[0, y, canvasWidth, y]}
         stroke="#d1d5db"
         strokeWidth={1}
+        listening={false}
       />
     )
   }

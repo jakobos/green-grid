@@ -27,7 +27,7 @@ export function GardenItemShape({
   const cx = item.xMeters * PIXELS_PER_METER + w / 2
   const cy = item.yMeters * PIXELS_PER_METER + h / 2
 
-  const handleClick = (e: Konva.KonvaEventObject<MouseEvent>): void => {
+  const handleSelect = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>): void => {
     e.cancelBubble = true
     onSelect()
   }
@@ -47,8 +47,8 @@ export function GardenItemShape({
       offsetY={h / 2}
       rotation={item.rotationDeg}
       draggable={isSelected}
-      onClick={handleClick}
-      onDragEnd={handleDragEnd}
+      onClick={handleSelect}
+      onTap={handleSelect}
     >
       {catalogItem.shape === 'circle' ? (
         <Circle

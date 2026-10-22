@@ -93,9 +93,9 @@ export function Canvas(): JSX.Element {
     [viewport, setViewport]
   )
 
-  const handleMouseDown = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
-      // Only pan when clicking on the Stage background (not on items)
+  const handlePointerDown = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      // Only pan when clicking/touching the Stage background (not on items)
       if (e.target !== e.target.getStage()) return
       isPanning.current = true
       didPan.current = false
@@ -105,7 +105,7 @@ export function Canvas(): JSX.Element {
     []
   )
 
-  const handleMouseMove = useCallback(
+  const handlePointerMove = useCallback(
     () => {
       if (!isPanning.current) return
       const stage = stageRef.current
@@ -121,7 +121,7 @@ export function Canvas(): JSX.Element {
     []
   )
 
-  const handleMouseUp = useCallback(
+  const handlePointerUp = useCallback(
     () => {
       if (!isPanning.current) return
       isPanning.current = false
@@ -136,14 +136,14 @@ export function Canvas(): JSX.Element {
     [viewport.scale, setViewport]
   )
 
-  const handleStageClick = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
+  const handleStageSelect = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
       // Don't deselect after a pan gesture
       if (didPan.current) {
         didPan.current = false
         return
       }
-      // Only deselect when clicking the Stage background (no bubbled item click)
+      // Only deselect when clicking/tapping the Stage background (no bubbled item event)
       if (e.target === e.target.getStage()) {
         clearSelection()
       }
@@ -197,10 +197,14 @@ export function Canvas(): JSX.Element {
           scaleX={viewport.scale}
           scaleY={viewport.scale}
           onWheel={handleWheel}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onClick={handleStageClick}
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+          onClick={handleStageSelect}
+          onTap={handleStageSelect}
         >
           {/* Grid layer — always below garden items */}
           <Layer>
