@@ -49,6 +49,7 @@ export function GardenItemShape({
       draggable={isSelected}
       onClick={handleSelect}
       onTap={handleSelect}
+      onDragEnd={handleDragEnd}
     >
       {catalogItem.shape === 'circle' ? (
         <Circle
