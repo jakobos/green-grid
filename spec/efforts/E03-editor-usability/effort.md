@@ -1,6 +1,6 @@
 ---
 id: E03
-status: proposed
+status: active
 opened: 2026-10-23
 ---
 
