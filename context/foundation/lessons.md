@@ -1,7 +1,0 @@
-# Lessons — accrued warnings and load-bearing decisions (append-only)
-
-## Limen autonomy profile match does not activate — 2026-10-17
-The `repos[].match` field in `~/.config/limen/autonomy.json` did not match this repository even though the substring `projects/active/green-grid` is in the working directory path. The `default` profile applied instead of the intended `ship` profile. Changing `default` to `ship` worked around it, but the root cause is unclear — possibly the match needs an absolute path or a different format. **Why:** a wrong profile silently blocks pushes, PRs, and merges, and the error message names the profile but not why the match failed. **How to apply:** after setting a repo-specific profile, verify which profile loaded (shown in the system prompt's Permissions line) before relying on it.
-
-## Limen coordinator not notified when a worker job finishes — 2026-10-17
-When a spawned worker job completed, the coordinator session received no wake or notification. The coordinator had to manually check `limen jobs <id>` to discover the job was done. The finish webhook was not configured (`configured: no`), and `gh` (GitHub CLI) was not installed, which may have blocked the notification path. **Why:** without a wake, the coordinator sits idle and the owner has to ask for status, defeating the point of background workers. **How to apply:** before spawning the first job, verify `limen jobs` shows a working finish-webhook configuration, or expect to poll manually. Check that `gh` is installed if the notification path depends on it.
