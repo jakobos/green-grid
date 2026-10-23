@@ -58,6 +58,13 @@ export function Canvas(): JSX.Element {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        if (!isTypingTarget(e.target) && selectedItemId) {
+          duplicateItem(selectedItemId)
+        }
+        return
+      }
       if (isTypingTarget(e.target)) return
       if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault()
@@ -69,11 +76,6 @@ export function Canvas(): JSX.Element {
         return
       }
       if (!selectedItemId) return
-      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault()
-        duplicateItem(selectedItemId)
-        return
-      }
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault()
         rotateItem(selectedItemId)

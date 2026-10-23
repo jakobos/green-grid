@@ -279,23 +279,26 @@ describe('Canvas keydown: Ctrl+D and Ctrl+Shift+Z', () => {
     expect(items[2].xMeters).toBe(3)
   })
 
-  it('Ctrl+D does nothing when nothing is selected', () => {
+  it('Ctrl+D does nothing when nothing is selected but still prevents default', () => {
     useGardenStore.setState({ selectedItemId: null })
     render(<Canvas />)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true, cancelable: true })
+    window.dispatchEvent(event)
     const state = useGardenStore.getState()
     expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+    expect(event.defaultPrevented).toBe(true)
   })
 
-  it('Ctrl+D does nothing when typing in an input', () => {
+  it('Ctrl+D does nothing when typing in an input but still prevents default', () => {
     render(<Canvas />)
     const inputEl = document.createElement('input')
     document.body.appendChild(inputEl)
-    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true })
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true, cancelable: true })
     Object.defineProperty(event, 'target', { value: inputEl })
     window.dispatchEvent(event)
     const state = useGardenStore.getState()
     expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+    expect(event.defaultPrevented).toBe(true)
     document.body.removeChild(inputEl)
   })
 

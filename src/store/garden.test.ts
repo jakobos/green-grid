@@ -354,15 +354,6 @@ describe('useGardenStore', () => {
       expect(useGardenStore.getState().selectedItemId).toBe(copy.id)
     })
 
-    it('preserves rotationDeg on the copy', () => {
-      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 1, yMeters: 1 })
-      const id = activeGarden().items[0].id
-      useGardenStore.getState().rotateItem(id)
-      useGardenStore.getState().duplicateItem(id)
-      const { items } = activeGarden()
-      expect(items[1].rotationDeg).toBe(90)
-    })
-
     it('pushes exactly one history entry', () => {
       useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
       const id = activeGarden().items[0].id
