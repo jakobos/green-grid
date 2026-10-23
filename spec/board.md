@@ -39,6 +39,6 @@
 
 | role        | provider | model | thinking |
 | ----------- | -------- | ----- | -------- |
-| coordinator | anthropic | claude-opus-5-5 | high |
-| worker      | anthropic | claude-sonnet-4-6 | high |
-| reviewer    | anthropic | claude-opus-5-5 | high |
+| coordinator | google-antigravity | claude-opus-5-5 | high |
+| worker      | google-antigravity | claude-sonnet-5-5 | high |
+| reviewer    | google-antigravity | claude-opus-5-5 | high |
