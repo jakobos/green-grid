@@ -38,6 +38,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - PDF: `jspdf`, loaded with a dynamic `import()` on first PDF export so the editor bundle doesn't grow. Justification: a direct one-click PDF download; browsers can't produce a PDF file from a page without the print dialog.
 - Symbols: each catalog item gains a `symbol` (e.g. `tree`, `shrub`, `bed`, `bulb`, `groundcover`, `herb`) that the export maps to a drawing routine. The editor ignores it.
 - Markers: every placed item type gets a number (1, 2, 3, …), ordered by layer and then legend order. Each placed item carries a small circled number on the plan; the legend entry with that number gives name, quantity and cost.
+- North direction: each garden stores `northDeg`, one of 0, 45, …, 315, measured clockwise from the top of the plan. Existing gardens migrate to 0 (north up). A plain header control next to the dimensions sets it (N, NE, E, SE, S, SW, W, NW, shown with an arrow), and the editor shows a small north arrow in a corner of the canvas. The plan itself never rotates; only the compass, in the editor and on the export, points to north.
 
 ## Decisions
 
@@ -48,6 +49,9 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - 2026-10-23 · One Konva sheet feeds both PNG and PDF; PDF via jspdf wrapping the 300 dpi raster · user decision; one layout to maintain, direct download instead of the print dialog
 - 2026-10-23 · Numbered markers keyed to the legend, not item names on the plan · user decision; names clutter dense beds
 - 2026-10-23 · One marker number per catalog type, not per placed item · a bed of 40 bulbs needs one legend line, not 40
+- 2026-10-23 · North direction is a per-garden setting in 8 steps of 45°; the compass rotates, the plan does not · user request; rotating the map would break the grid and meter labels
+- 2026-10-23 · North direction lives in E02 because its visible result is the plan's compass; its header control is plain editor chrome · the setting exists for the export
+- 2026-10-23 · Changing north, like name and dimensions, is not recorded in undo history · matches existing garden setters
 
 ## Roadmap
 
@@ -58,6 +62,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 4. [ ] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind
 5. [ ] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend
 6. [ ] Plant list: legend quantities, cost per entry, and a grand total
+7. [ ] North direction: per-garden setting in 45° steps, header control, editor north arrow, export compass follows it
 
 ## Risks and open questions
 
