@@ -18,6 +18,7 @@
 - E04 catalog-and-data: follows E02 and E03, backup included; line catalog items need E03 line items.
 - C005 selection-tap: parked; touch and mobile are out of scope for now.
 - Reviews (user decision 2026-10-23): a reviewer job only for risky changes: data model, persist migration, line items. Others are reviewed by their coordinator and the orchestrator.
+- Lint gap: styleguide Checks name `npm run lint`, but the repo has no ESLint. `typecheck` script added on main (fea1893). The orchestrator adds ESLint as one small change in a quiet window between lands, so its fixes don't collide with running jobs.
 
 ## PROVEN
 
