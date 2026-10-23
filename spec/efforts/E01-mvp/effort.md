@@ -45,7 +45,7 @@ Five vertical slices, each building on the last: scaffold with grid canvas, item
 2. [x] Item catalog and drag-and-drop placement — C002-item-placement — C002
 3. [x] Item manipulation: select, move, rotate, delete, undo/redo — C003-item-manipulation — C003
 4. [x] Multi-garden management: create, rename, delete, switch — C004-garden-switcher — C004
-5. [~] Export to image: PNG/SVG with grid, items, legend, dimensions, compass, title — C006 (active)
+5. [x] Export to image: PNG/SVG with grid, items, legend, dimensions, compass, title — C006
 
 ## Risks and open questions
 

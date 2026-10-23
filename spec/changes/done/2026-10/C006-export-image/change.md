@@ -4,6 +4,7 @@ effort: E01
 slice: 5
 depends: [C004]
 opened: 2026-10-23
+closed: 2026-10-23
 ---
 
 # C006-export-image · Export garden to a downloadable PNG image
