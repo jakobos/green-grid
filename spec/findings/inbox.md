@@ -13,3 +13,4 @@
 - 2026-10-23 · friction · styleguide references `npm run lint` and `npm run typecheck` but these scripts do not exist in package.json; typecheck is embedded in `npm run build` as `tsc --noEmit`, and there is no ESLint config. Evidence: `npm run` output listing only `dev`, `build`, `preview`, `test`, `test:watch`. · job 2026-10-23-e03-search-e745e5 · C009
 - 2026-10-23 · friction · playwright-cli default browser (system chrome) gets net::ERR_ACCESS_DENIED on localhost dev servers; open sessions with --browser=chromium · C007
 - 2026-10-23 · friction · Host has 1 CPU and 4 GB RAM: with 3 omp sessions, workers, vite and chromium the load average hit 35 and npm run build took 1m45s; cap parallel workers at 1 per lane and close browsers after use
+- 2026-10-23 · bug · package.json has no lint or typecheck script, but the styleguide's Checks list npm run lint and npm run typecheck; typecheck is only covered by tsc --noEmit inside build, lint not at all · C007
