@@ -179,3 +179,50 @@ describe('Canvas', () => {
     })
   })
 })
+
+describe('Canvas keydown guard', () => {
+  it('does not rotate or delete when keydown comes from an input element', () => {
+    const item: GardenItem = {
+      id: 'i1',
+      catalogId: 'tree-apple',
+      xMeters: 2,
+      yMeters: 2,
+      widthMeters: 4,
+      heightMeters: 4,
+      rotationDeg: 0,
+    }
+    useGardenStore.setState({
+      gardens: [{ ...testGarden, items: [item] }],
+      activeGardenId: testGarden.id,
+      viewports: { [testGarden.id]: testViewport },
+      selectedItemId: 'i1',
+      past: [],
+      future: [],
+    })
+    render(<Canvas />)
+
+    // Create an input element as the event target
+    const inputEl = document.createElement('input')
+    document.body.appendChild(inputEl)
+
+    // Fire 'r' from the input — should NOT rotate
+    const rEvent = new KeyboardEvent('keydown', { key: 'r', bubbles: true })
+    Object.defineProperty(rEvent, 'target', { value: inputEl })
+    window.dispatchEvent(rEvent)
+
+    let state = useGardenStore.getState()
+    let garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(garden.items[0].rotationDeg).toBe(0)
+
+    // Fire Backspace from the input — should NOT delete
+    const bsEvent = new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true })
+    Object.defineProperty(bsEvent, 'target', { value: inputEl })
+    window.dispatchEvent(bsEvent)
+
+    state = useGardenStore.getState()
+    garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(garden.items).toHaveLength(1)
+
+    document.body.removeChild(inputEl)
+  })
+})

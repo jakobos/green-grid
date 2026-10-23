@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CATALOG, LAYER_NAMES } from '@/data/catalog'
+import { Input } from '@/components/ui/input'
 import type { CatalogItem, Layer } from '@/types/garden'
 
 const LAYERS: Layer[] = [1, 2, 3, 4, 5]
@@ -7,10 +8,12 @@ const LAYERS: Layer[] = [1, 2, 3, 4, 5]
 type LayerSectionProps = {
   layer: Layer
   items: CatalogItem[]
+  queryActive: boolean
 }
 
-function LayerSection({ layer, items }: LayerSectionProps): JSX.Element {
+function LayerSection({ layer, items, queryActive }: LayerSectionProps): JSX.Element {
   const [open, setOpen] = useState(true)
+  const showItems = open || queryActive
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -24,7 +27,7 @@ function LayerSection({ layer, items }: LayerSectionProps): JSX.Element {
         <span aria-hidden="true">{open ? '▾' : '▸'}</span>
       </button>
 
-      {open && (
+      {showItems && (
         <ul className="py-1">
           {items.map((item) => (
             <CatalogEntry key={item.catalogId} item={item} />
@@ -72,6 +75,23 @@ type SidebarProps = {
 }
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps): JSX.Element {
+  const [query, setQuery] = useState('')
+  const trimmed = query.trim()
+  const queryActive = trimmed.length > 0
+
+  const filteredItems = queryActive
+    ? CATALOG.filter(
+        (item) =>
+          item.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+          item.description.toLowerCase().includes(trimmed.toLowerCase())
+      )
+    : CATALOG
+
+  const visibleLayers = LAYERS.map((layer) => ({
+    layer,
+    items: filteredItems.filter((item) => item.layer === layer),
+  })).filter(({ items }) => items.length > 0)
+
   return (
     <aside
       data-testid="sidebar"
@@ -96,12 +116,42 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps): JSX.Element {
       </div>
 
       {!collapsed && (
-        <div className="flex-1 overflow-y-auto" data-testid="sidebar-catalog">
-          {LAYERS.map((layer) => {
-            const items = CATALOG.filter((item) => item.layer === layer)
-            return <LayerSection key={layer} layer={layer} items={items} />
-          })}
-        </div>
+        <>
+          <div className="border-b border-border px-2 py-2">
+            <label htmlFor="catalog-search" className="sr-only">
+              Search catalog
+            </label>
+            <Input
+              id="catalog-search"
+              type="search"
+              placeholder="Search…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setQuery('')
+                }
+              }}
+              className="h-7 text-xs"
+              data-testid="catalog-search"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto" data-testid="sidebar-catalog">
+            {visibleLayers.length === 0 && queryActive ? (
+              <p className="px-3 py-4 text-xs text-muted-foreground">No items match.</p>
+            ) : (
+              visibleLayers.map(({ layer, items }) => (
+                <LayerSection
+                  key={layer}
+                  layer={layer}
+                  items={items}
+                  queryActive={queryActive}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
     </aside>
   )

@@ -63,4 +63,107 @@ describe('Sidebar', () => {
     render(<Sidebar collapsed={true} onToggle={vi.fn()} />)
     expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
   })
+
+  describe('catalog search', () => {
+    it('renders a search input when expanded', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      expect(screen.getByTestId('catalog-search')).toBeInTheDocument()
+    })
+
+    it('does not render search input when collapsed', () => {
+      render(<Sidebar collapsed={true} onToggle={vi.fn()} />)
+      expect(screen.queryByTestId('catalog-search')).not.toBeInTheDocument()
+    })
+
+    it('filters items by name (case-insensitive): typing "rose" shows Rose Bush', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'rose' } })
+      // Rose Bush is in the catalog under layer 4 (Low Plants)
+      expect(screen.getByText('Rose Bush')).toBeInTheDocument()
+      // Items without "rose" in name or description should be gone
+      expect(screen.queryByText('Apple Tree')).not.toBeInTheDocument()
+      expect(screen.queryByText('Tulip Bulb')).not.toBeInTheDocument()
+    })
+
+    it('filters items by name case-insensitively: "ROSE" shows Rose Bush', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'ROSE' } })
+      expect(screen.getByText('Rose Bush')).toBeInTheDocument()
+    })
+
+    it('shows layer heading of matching items but hides layers with no matches', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'rose' } })
+      // Rose Bush is under Low Plants (layer 4)
+      expect(screen.getByText('Low Plants')).toBeInTheDocument()
+      // Trees has no matches
+      expect(screen.queryByText('Trees')).not.toBeInTheDocument()
+    })
+
+    it('filters by description: typing "pollinators" shows Lavender', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      // Lavender description: "Perennial herb; attracts pollinators."
+      fireEvent.change(input, { target: { value: 'pollinators' } })
+      expect(screen.getByText('Lavender')).toBeInTheDocument()
+      expect(screen.queryByText('Apple Tree')).not.toBeInTheDocument()
+    })
+
+    it('shows no-items message when query matches nothing', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'xyznotfound999' } })
+      expect(screen.getByText(/no items match/i)).toBeInTheDocument()
+      expect(screen.queryByText('Apple Tree')).not.toBeInTheDocument()
+    })
+
+    it('restores all items when query is cleared', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'xyznotfound999' } })
+      expect(screen.getByText(/no items match/i)).toBeInTheDocument()
+      fireEvent.change(input, { target: { value: '' } })
+      expect(screen.queryByText(/no items match/i)).not.toBeInTheDocument()
+      expect(screen.getByText('Apple Tree')).toBeInTheDocument()
+    })
+
+    it('pressing Escape clears the query and restores all items', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'rose' } })
+      expect(screen.queryByText('Apple Tree')).not.toBeInTheDocument()
+      fireEvent.keyDown(input, { key: 'Escape' })
+      expect(screen.getByText('Apple Tree')).toBeInTheDocument()
+    })
+
+    it('shows filtered item even when its layer section is collapsed', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      // Collapse the Trees section
+      const treesHeading = screen.getByText('Trees').closest('button')!
+      fireEvent.click(treesHeading)
+      expect(screen.queryByText('Apple Tree')).not.toBeInTheDocument()
+      // Now search for Apple Tree
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'apple' } })
+      // Apple Tree should be visible despite collapsed section
+      expect(screen.getByText('Apple Tree')).toBeInTheDocument()
+    })
+
+    it('filtered item is draggable and sets correct drag data', () => {
+      render(<Sidebar collapsed={false} onToggle={vi.fn()} />)
+      const input = screen.getByTestId('catalog-search')
+      fireEvent.change(input, { target: { value: 'lavender' } })
+      const lavender = screen.getByText('Lavender').closest('li')!
+      expect(lavender).toHaveAttribute('draggable', 'true')
+      const dataTransfer = { setData: vi.fn(), effectAllowed: '' }
+      fireEvent.dragStart(lavender, { dataTransfer })
+      expect(dataTransfer.setData).toHaveBeenCalledWith(
+        'application/x-catalog-id',
+        'herb-lavender'
+      )
+    })
+  })
 })
