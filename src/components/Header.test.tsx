@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Header } from './Header'
 import { useGardenStore } from '@/store/garden'
@@ -194,6 +194,6 @@ describe('Header export', () => {
     const { exportGarden } = await import('@/export/exportGarden')
     render(<Header />)
     await userEvent.click(screen.getByRole('button', { name: 'Export PNG' }))
-    expect(exportGarden).toHaveBeenCalledWith(activeGarden(), expect.any(Array))
+    await waitFor(() => expect(exportGarden).toHaveBeenCalledWith(activeGarden(), expect.any(Array)))
   })
 })

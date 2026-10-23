@@ -2,7 +2,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useGardenStore, useActiveGarden } from '@/store/garden'
 import { CATALOG } from '@/data/catalog'
-import { exportGarden } from '@/export/exportGarden'
 
 export function Header(): JSX.Element {
   const garden = useActiveGarden()
@@ -107,7 +106,13 @@ export function Header(): JSX.Element {
       <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
-          onClick={() => exportGarden(garden, CATALOG)}
+          onClick={async () => {
+            // Dynamic import keeps roughjs (and the full export pipeline) out of
+            // the main editor bundle; static import would pull 30+ kB into every
+            // page load even when the user never exports.
+            const { exportGarden } = await import('@/export/exportGarden')
+            exportGarden(garden, CATALOG)
+          }}
           className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
           aria-label="Export PNG"
         >
