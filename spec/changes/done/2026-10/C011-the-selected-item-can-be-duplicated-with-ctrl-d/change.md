@@ -4,6 +4,7 @@ effort: E03
 slice: 3
 depends: [C008]
 opened: 2026-10-23
+closed: 2026-10-23
 ---
 
 # C011 · The selected item can be duplicated with Ctrl+D or a button
