@@ -1,6 +1,7 @@
 # C007 · The export draws the plan in seeded hand-drawn strokes on a paper background — outcome
 
-<!-- Three to six sentences: what changed, the merge commit, and anything the next reader must know.
-     Later workers on the same effort receive this text in their brief. -->
+The PNG export now draws on a paper background (`PAPER #fdf6e3`) in ink tones. The palette lives in `src/export/exportPalette.ts`. The grid, boundary, items and compass are `Konva.Shape` nodes whose `sceneFunc` draws `rough.generator()` drawables. Items get hachure in their catalog colour. Seeds come from `seedHash` (djb2-xor, `src/export/seedHash.ts`) applied to the garden id, `garden:gv:N`, `garden:gh:N`, `garden:boundary`, `garden:compass` or the item id, and two exports of the same garden were byte-identical. The parameters (grid roughness 0.4 and width 0.5, boundary 1.0 and 2, items 1.2 and 1.5 with hachureGap 8) are tuned in the old 60 px/m units, so C010 must re-express them in paper units. `buildItemDrawable` is the exported test seam.
+
+`sceneFunc` hands `rough.canvas` Konva's private `ctx.canvas._canvas` (the raw `HTMLCanvasElement`) because roughjs can't draw through Konva's context wrapper. A Konva upgrade can break this, so check the export after any Konva bump. `Header.tsx` loads `@/export/exportGarden` with a dynamic `import()` on click, which keeps roughjs in its own chunk of about 32 kB. Without it the main bundle reached 513 kB and the build warned. Load `jspdf` the same way in slice 3.
 
 Landed 2026-10-23 with `guild land 2026-10-23-make-the-png-export-draw-the-f240c8`: merge commit 8dc6b1f of guild/2026-10-23-make-the-png-export-draw-the-1da196 into master.

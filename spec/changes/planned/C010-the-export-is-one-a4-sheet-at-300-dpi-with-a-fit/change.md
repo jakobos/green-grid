@@ -42,7 +42,7 @@ Slice 2 of E02; read the effort's Decisions (A4 only, standard scales, paper uni
 - At 1:1000 the grid is drawn every 5 m or 10 m, not every 1 m. No two meter labels are closer than 8 mm.
 - Stroke width and text size in pixels are the same for a 3 × 3 m garden and a 100 × 100 m garden.
 - Two exports of the same garden are still byte-identical.
-- `npm run lint`, `npm run typecheck`, `npm run test` and `npm run build` pass.
+- `npm run typecheck`, `npm run test` and `npm run build` pass with no warnings, plus `npm run lint` if ESLint has landed on main by then.
 
 ## Verification
 
