@@ -3,6 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Header } from './Header'
 import { useGardenStore } from '@/store/garden'
+import { vi } from 'vitest'
+
+vi.mock('@/export/exportGarden', () => ({ exportGarden: vi.fn() }))
 import type { Garden, Viewport } from '@/types/garden'
 
 const testGarden: Garden = {
@@ -183,5 +186,14 @@ describe('Header', () => {
     useGardenStore.getState().createGarden()
     render(<Header />)
     expect(screen.getByLabelText('Delete garden')).not.toBeDisabled()
+  })
+})
+
+describe('Header export', () => {
+  it('exports the active garden when Export PNG is clicked', async () => {
+    const { exportGarden } = await import('@/export/exportGarden')
+    render(<Header />)
+    await userEvent.click(screen.getByRole('button', { name: 'Export PNG' }))
+    expect(exportGarden).toHaveBeenCalledWith(activeGarden(), expect.any(Array))
   })
 })

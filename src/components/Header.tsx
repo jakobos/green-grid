@@ -1,6 +1,8 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useGardenStore, useActiveGarden } from '@/store/garden'
+import { CATALOG } from '@/data/catalog'
+import { exportGarden } from '@/export/exportGarden'
 
 export function Header(): JSX.Element {
   const garden = useActiveGarden()
@@ -103,6 +105,14 @@ export function Header(): JSX.Element {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => exportGarden(garden, CATALOG)}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+          aria-label="Export PNG"
+        >
+          Export PNG
+        </button>
         <button
           type="button"
           onClick={undo}
