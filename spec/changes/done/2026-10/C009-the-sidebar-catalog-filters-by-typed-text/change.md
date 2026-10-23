@@ -4,6 +4,7 @@ effort: E03
 slice: 2
 depends: []
 opened: 2026-10-23
+closed: 2026-10-23
 ---
 
 # C009 · The sidebar catalog filters by typed text
