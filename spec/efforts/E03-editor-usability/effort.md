@@ -53,7 +53,7 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 <!-- guild:roadmap — slice text is yours; marks and change ids are generated -->
 1. [ ] Snap placement and movement to a 0.5 m grid — C008 (planned)
 2. [ ] Catalog search in the sidebar — C009 (planned)
-3. [ ] Duplicate the selected item
+3. [ ] Duplicate the selected item — C011 (planned)
 4. [ ] Resize area items with handles, snapped
 5. [ ] Item properties panel: label, width, height, notes
 6. [ ] Line items: drop, select, move, edit vertices, render in editor and export
