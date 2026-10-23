@@ -30,7 +30,7 @@ The catalog covers the common parts of a home garden: hardscape, structures, wat
 
 ## Approach
 
-- Catalog: keep `src/data/catalog.ts` as the single source, perhaps split into one file per layer once it grows. Add a `category` used for sidebar subgrouping and E02 symbols. Fix layer assignments in the same pass.
+- Catalog: keep `src/data/catalog.ts` as the single source, perhaps split into one file per layer once it grows. Add a `category` for sidebar subgrouping, separate from the export `symbol` that E02 adds. Fix layer assignments in the same pass. Every new item also needs a `symbol`.
 - Sidebar order: by layer, then category, then name.
 - Backup: header actions "Download backup" and "Restore backup". Export serialises `gardens` with `version` and `exportedAt`. Import parses the file, validates its shape, migrates it, assigns fresh ids, appends the gardens and switches to the first imported one.
 
@@ -39,6 +39,8 @@ The catalog covers the common parts of a home garden: hardscape, structures, wat
 <!-- Append-only: date · decision · why. Workers read this so they do not relitigate. -->
 - 2026-10-23 · Import appends with fresh ids, never replaces · a restore can't destroy current work
 - 2026-10-23 · catalogIds are append-only · placed items and backups reference them
+- 2026-10-23 · "Sorting" means correct layers, categories and a fixed sidebar order (layer, category, name), not a user sort control · user decision
+- 2026-10-23 · E04 runs after E02 and E03, backup included · user decision
 
 ## Roadmap
 
@@ -50,6 +52,5 @@ The catalog covers the common parts of a home garden: hardscape, structures, wat
 
 ## Risks and open questions
 
-- Does "sorting" mean re-sorting items into the correct layers and categories (as planned here), or a user-facing sort control in the sidebar?
-- Backup is the only guard against data loss. Slice 1 has no dependency on E02 or E03 and could run first.
+- Backup stays the only guard against data loss until E04 slice 1 lands.
 - A JSON schema validator would be a new dependency; a hand-written type guard is likely enough for one file shape.

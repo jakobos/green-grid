@@ -31,9 +31,9 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 
 ## Approach
 
-- Snapping: one shared `snapToGrid(meters)` with `SNAP_STEP_METERS = 0.5`, used by drop, move, resize and line-vertex drags.
-- Resize: Konva `Transformer` on the selected area item, with rotation disabled and the resulting size snapped.
-- Item properties: a compact panel for the selected item with label, width, height and notes. Overrides live on the `GardenItem` and fall back to catalog defaults. The label also feeds the E02 on-plan labels.
+- Snapping: shared `snapPosition(meters)` with `POSITION_SNAP_METERS = 0.5` for drop, move and line-vertex drags, and `snapSize(meters)` with `SIZE_SNAP_METERS = 0.1` (minimum 0.1 m) for resize handles and typed sizes.
+- Resize: Konva `Transformer` on the selected area item, with rotation disabled and the resulting size snapped to 0.1 m.
+- Item properties: a compact panel for the selected item with label, width, height and notes. Overrides live on the `GardenItem` and fall back to catalog defaults. In the E02 export, a labelled item gets its own legend entry and marker number, keyed by catalog type plus label (e.g. "Rose Bush · Gertrude Jekyll").
 - Duplicate: Ctrl+D and a button. The copy is offset by one snap step and becomes the selection.
 - Catalog search: a filter input at the top of the sidebar that matches name and description and keeps the per-layer grouping.
 - Line items: `GardenItem` becomes a union discriminated by `kind: 'area' | 'line'`. A line holds `points` in meters and a stroke width. Catalog entries gain `shape: 'line'`. Dropping a line item creates a two-point segment. Selecting it shows vertex handles; dragging a handle moves that vertex, and dragging a midpoint handle inserts a vertex. Lines render in the editor, the layer order and the E02 export.
@@ -45,6 +45,8 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 - 2026-10-23 · Customization is per placed item (label, size, notes), never new catalog entries · vision "No custom item creation"
 - 2026-10-23 · Lines are dropped as a segment and then edited by vertex handles, not drawn in a mode · vision "no modes"
 - 2026-10-23 · Touch and mobile are out of scope for this effort · user request
+- 2026-10-23 · Size snap step is 0.1 m, separate from the 0.5 m position step · user decision; a 0.2 m bulb keeps its size when resized
+- 2026-10-23 · Item label splits the E02 legend key: catalog type plus label · E02 numbers markers per type; varieties need their own line
 
 ## Roadmap
 
@@ -58,6 +60,5 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 
 ## Risks and open questions
 
-- Size snap: should sizes snap to 0.5 m like positions? 0.2 m bulbs would then grow to 0.5 m on first resize. A finer size step (0.1 m) may be needed.
 - Line items touch the type, store, migration, canvas, hit testing and export at once. If slice 6 runs long, split it into "line model and rendering" and "vertex editing".
-- If E02 slice 3 (on-plan labels) lands before slice 5 here, it shows catalog names until labels exist.
+- A 0.5 m position step with 0.1 m sizes means a 0.2 m item can't sit flush against a 0.3 m neighbour. Accepted for now; revisit if it hurts in use.
