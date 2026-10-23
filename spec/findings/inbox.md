@@ -15,3 +15,4 @@
 - 2026-10-23 · friction · Host has 1 CPU and 4 GB RAM: with 3 omp sessions, workers, vite and chromium the load average hit 35 and npm run build took 1m45s; cap parallel workers at 1 per lane and close browsers after use
 - 2026-10-23 · bug · package.json has no lint or typecheck script, but the styleguide's Checks list npm run lint and npm run typecheck; typecheck is only covered by tsc --noEmit inside build, lint not at all · C007
 - 2026-10-23 · friction · C011 worker left its vite dev server on 5192 running after finish despite a steer to stop it (pids 705846/7, found 2026-10-23 on overloaded 1-CPU host). · job 2026-10-23-e03-duplicate-ef38ae
+- 2026-10-23 · friction · Anthropic rate limit (429, retry-after ~2h) failed C010 mid-run with no commits and stalled both coordinators; recovered by /exit and omp --resume <session> --model google-antigravity/claude-opus-5-5, which keeps coordinator context · job 2026-10-23-make-every-png-export-one-a4-ea9166
