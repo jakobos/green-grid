@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { Canvas } from './Canvas'
 import { useGardenStore } from '@/store/garden'
 import type { Garden, GardenItem, Viewport } from '@/types/garden'
@@ -265,9 +265,12 @@ describe('Canvas keydown: Ctrl+D and Ctrl+Shift+Z', () => {
 
   it('Ctrl+D twice gives three items on a 0.5 m diagonal', () => {
     render(<Canvas />)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
-    // After first dup, re-read state to get copy id (store updates synchronously)
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    })
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    })
     const state = useGardenStore.getState()
     const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
     expect(items).toHaveLength(3)
@@ -297,20 +300,15 @@ describe('Canvas keydown: Ctrl+D and Ctrl+Shift+Z', () => {
   })
 
   it('Ctrl+Shift+Z redoes (case-insensitive key match)', () => {
-    // Undo the initial state to create a future snapshot
+    // Directly set a redo-able state: future holds the item list to restore
     useGardenStore.setState({
       gardens: [{ ...testGarden, items: [] }],
-      past: [[item]],
-      future: [],
+      past: [],
+      future: [[item]],
+      selectedItemId: null,
     })
-    // Undo: restores empty; now future has [item]
-    useGardenStore.getState().undo()
-    const afterUndo = useGardenStore.getState()
-    expect(afterUndo.gardens.find((g) => g.id === afterUndo.activeGardenId)!.items).toHaveLength(0)
-    expect(afterUndo.future).toHaveLength(1)
-
     render(<Canvas />)
-    // Ctrl+Shift+Z: key is uppercase 'Z' with shiftKey
+    // Ctrl+Shift+Z: key is uppercase 'Z' with shiftKey held (the browser produces this)
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Z', ctrlKey: true, shiftKey: true, bubbles: true }))
     const state = useGardenStore.getState()
     expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
