@@ -9,6 +9,7 @@
 - Konva via react-konva for all garden rendering.
 - shadcn/ui (copied in, not installed) on Radix primitives. Lucide React for icons.
 - Vitest + React Testing Library.
+- `playwright-cli` for live preview of the running app, browser testing, and visual checks.
 - Every new dependency needs a one-line justification.
 
 ## Shape
