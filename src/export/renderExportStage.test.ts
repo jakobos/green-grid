@@ -81,6 +81,18 @@ describe('renderExportStage', () => {
     stage.destroy()
   })
 
+  it('keeps the subtitle above the top meter labels', () => {
+    const stage = renderExportStage(baseGarden, CATALOG)
+    const all = stage.find<Konva.Text>('Text')
+    const subtitle = all.find((t) => t.name() === 'dimensions')!
+    const topLabels = all.filter((t) => /^\d+$/.test(t.text()) && t.getAbsolutePosition().x > 0 && t.align() === 'center')
+    expect(topLabels.length).toBeGreaterThan(0)
+    const subtitleBottom = subtitle.getAbsolutePosition().y + subtitle.height()
+    const labelsTop = Math.min(...topLabels.map((t) => t.getAbsolutePosition().y))
+    expect(subtitleBottom).toBeLessThan(labelsTop)
+    stage.destroy()
+  })
+
   it('lists each placed catalog item once in the legend, grouped by layer', () => {
     const [a, b] = [CATALOG.find((c) => c.layer === 5)!, CATALOG.find((c) => c.layer === 1)!]
     const garden = {

@@ -6,12 +6,13 @@ import { PIXELS_PER_METER } from '@/components/Grid'
 
 export const EXPORT_PIXEL_RATIO = 2.5
 export const EXPORT_LABEL_MARGIN = 40
-export const EXPORT_TITLE_HEIGHT = 70
+export const EXPORT_TITLE_HEIGHT = 100
 export const EXPORT_LEGEND_WIDTH = 240
 
 const PAGE_PADDING = 24
 const LEGEND_ROW_HEIGHT = 22
-const LEGEND_HEADING_HEIGHT = 30
+const LEGEND_HEADING_HEIGHT = 22
+const LEGEND_GROUP_GAP = 16
 const LEGEND_TITLE_HEIGHT = 36
 const FONT = 'sans-serif'
 const INK = '#111827'
@@ -35,7 +36,7 @@ function legendHeight(groups: LegendGroup[]): number {
   if (groups.length === 0) return 0
   return (
     LEGEND_TITLE_HEIGHT +
-    groups.reduce((sum, g) => sum + LEGEND_HEADING_HEIGHT + g.entries.length * LEGEND_ROW_HEIGHT, 0)
+    groups.reduce((sum, g) => sum + LEGEND_HEADING_HEIGHT + g.entries.length * LEGEND_ROW_HEIGHT + LEGEND_GROUP_GAP, 0)
   )
 }
 
@@ -167,6 +168,7 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
       )
       cursor += LEGEND_ROW_HEIGHT
     }
+    cursor += LEGEND_GROUP_GAP
   }
 }
 
