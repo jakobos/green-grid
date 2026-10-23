@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Garden, GardenItem, Viewport } from '@/types/garden'
 import type { CatalogItem } from '@/types/garden'
+import { POSITION_SNAP_METERS } from '@/lib/snap'
 
 const HISTORY_LIMIT = 50
 
@@ -36,6 +37,7 @@ type GardenStore = {
   createGarden: () => void
   switchGarden: (id: string) => void
   deleteGarden: (id: string) => void
+  duplicateItem: (id: string) => void
 }
 
 function makeGarden(name: string): Garden {
@@ -190,6 +192,28 @@ export const useGardenStore = create<GardenStore>()(
           }
         }),
 
+      duplicateItem: (id) =>
+        set((state) => {
+          const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
+          const original = garden.items.find((item) => item.id === id)
+          if (!original) return {}
+          const copy: GardenItem = {
+            ...original,
+            id: crypto.randomUUID(),
+            xMeters: original.xMeters + POSITION_SNAP_METERS,
+            yMeters: original.yMeters + POSITION_SNAP_METERS,
+          }
+          return {
+            ...pushHistory(state.past, garden.items),
+            gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+              ...g,
+              items: [...g.items, copy],
+              updatedAt: new Date().toISOString(),
+            })),
+            selectedItemId: copy.id,
+          }
+        }),
+
       deleteItem: (id) =>
         set((state) => {
           const garden = state.gardens.find((g) => g.id === state.activeGardenId)!
@@ -208,6 +232,7 @@ export const useGardenStore = create<GardenStore>()(
         set((state) => {
           if (state.past.length === 0) return {}
           const previous = state.past[state.past.length - 1]
+          const selectedStillExists = previous.some((item) => item.id === state.selectedItemId)
           return {
             past: state.past.slice(0, -1),
             future: [get().gardens.find((g) => g.id === state.activeGardenId)!.items, ...state.future],
@@ -216,6 +241,7 @@ export const useGardenStore = create<GardenStore>()(
               items: previous,
               updatedAt: new Date().toISOString(),
             })),
+            selectedItemId: selectedStillExists ? state.selectedItemId : null,
           }
         }),
 

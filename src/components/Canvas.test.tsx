@@ -226,3 +226,93 @@ describe('Canvas keydown guard', () => {
     document.body.removeChild(inputEl)
   })
 })
+
+describe('Canvas keydown: Ctrl+D and Ctrl+Shift+Z', () => {
+  const item: GardenItem = {
+    id: 'item-dup',
+    catalogId: 'tree-apple',
+    xMeters: 2,
+    yMeters: 3,
+    widthMeters: 4,
+    heightMeters: 4,
+    rotationDeg: 90,
+  }
+
+  beforeEach(() => {
+    useGardenStore.setState({
+      gardens: [{ ...testGarden, items: [item] }],
+      activeGardenId: testGarden.id,
+      viewports: { [testGarden.id]: testViewport },
+      selectedItemId: item.id,
+      past: [],
+      future: [],
+    })
+  })
+
+  it('Ctrl+D duplicates the selected item at x+0.5, y+0.5 and selects the copy', () => {
+    render(<Canvas />)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(items).toHaveLength(2)
+    const copy = items[1]
+    expect(copy.id).not.toBe(item.id)
+    expect(copy.xMeters).toBe(2.5)
+    expect(copy.yMeters).toBe(3.5)
+    expect(copy.rotationDeg).toBe(90)
+    expect(state.selectedItemId).toBe(copy.id)
+  })
+
+  it('Ctrl+D twice gives three items on a 0.5 m diagonal', () => {
+    render(<Canvas />)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    // After first dup, re-read state to get copy id (store updates synchronously)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(items).toHaveLength(3)
+    expect(items[0].xMeters).toBe(2)
+    expect(items[1].xMeters).toBe(2.5)
+    expect(items[2].xMeters).toBe(3)
+  })
+
+  it('Ctrl+D does nothing when nothing is selected', () => {
+    useGardenStore.setState({ selectedItemId: null })
+    render(<Canvas />)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+  })
+
+  it('Ctrl+D does nothing when typing in an input', () => {
+    render(<Canvas />)
+    const inputEl = document.createElement('input')
+    document.body.appendChild(inputEl)
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true })
+    Object.defineProperty(event, 'target', { value: inputEl })
+    window.dispatchEvent(event)
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+    document.body.removeChild(inputEl)
+  })
+
+  it('Ctrl+Shift+Z redoes (case-insensitive key match)', () => {
+    // Undo the initial state to create a future snapshot
+    useGardenStore.setState({
+      gardens: [{ ...testGarden, items: [] }],
+      past: [[item]],
+      future: [],
+    })
+    // Undo: restores empty; now future has [item]
+    useGardenStore.getState().undo()
+    const afterUndo = useGardenStore.getState()
+    expect(afterUndo.gardens.find((g) => g.id === afterUndo.activeGardenId)!.items).toHaveLength(0)
+    expect(afterUndo.future).toHaveLength(1)
+
+    render(<Canvas />)
+    // Ctrl+Shift+Z: key is uppercase 'Z' with shiftKey
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Z', ctrlKey: true, shiftKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+  })
+})

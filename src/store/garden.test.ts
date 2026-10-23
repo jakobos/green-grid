@@ -335,6 +335,61 @@ describe('useGardenStore', () => {
     })
   })
 
+  describe('duplicateItem', () => {
+    it('copies all fields except id, offset by 0.5 m, and selects the copy', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 2, yMeters: 3 })
+      const original = activeGarden().items[0]
+      useGardenStore.getState().duplicateItem(original.id)
+      const { items } = activeGarden()
+      expect(items).toHaveLength(2)
+      const copy = items[1]
+      expect(copy.id).not.toBe(original.id)
+      expect(copy.id).toMatch(/^[0-9a-f-]{36}$/)
+      expect(copy.catalogId).toBe(original.catalogId)
+      expect(copy.xMeters).toBe(original.xMeters + 0.5)
+      expect(copy.yMeters).toBe(original.yMeters + 0.5)
+      expect(copy.widthMeters).toBe(original.widthMeters)
+      expect(copy.heightMeters).toBe(original.heightMeters)
+      expect(copy.rotationDeg).toBe(original.rotationDeg)
+      expect(useGardenStore.getState().selectedItemId).toBe(copy.id)
+    })
+
+    it('preserves rotationDeg on the copy', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 1, yMeters: 1 })
+      const id = activeGarden().items[0].id
+      useGardenStore.getState().rotateItem(id)
+      useGardenStore.getState().duplicateItem(id)
+      const { items } = activeGarden()
+      expect(items[1].rotationDeg).toBe(90)
+    })
+
+    it('pushes exactly one history entry', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const id = activeGarden().items[0].id
+      const pastBefore = useGardenStore.getState().past.length
+      useGardenStore.getState().duplicateItem(id)
+      expect(useGardenStore.getState().past).toHaveLength(pastBefore + 1)
+    })
+
+    it('undo removes the copy and leaves no dangling selection', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const id = activeGarden().items[0].id
+      useGardenStore.getState().duplicateItem(id)
+      useGardenStore.getState().undo()
+      const { items } = activeGarden()
+      expect(items).toHaveLength(1)
+      expect(items[0].id).toBe(id)
+      expect(useGardenStore.getState().selectedItemId).toBeNull()
+    })
+
+    it('does nothing when id does not exist', () => {
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      const before = activeGarden().items.length
+      useGardenStore.getState().duplicateItem('nonexistent-id')
+      expect(activeGarden().items).toHaveLength(before)
+    })
+  })
+
   describe('migration', () => {
     it('migrates v0 single-garden to v1 multi-garden', () => {
       const v0Garden: Garden = {

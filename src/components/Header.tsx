@@ -15,6 +15,7 @@ export function Header(): JSX.Element {
     selectedItemId,
     rotateItem,
     deleteItem,
+    duplicateItem,
     undo,
     redo,
     past,
@@ -134,6 +135,14 @@ export function Header(): JSX.Element {
 
         {selectedItemId && (
           <>
+            <button
+              type="button"
+              onClick={() => duplicateItem(selectedItemId)}
+              className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+              aria-label="Duplicate item"
+            >
+              Duplicate
+            </button>
             <button
               type="button"
               onClick={() => rotateItem(selectedItemId)}
