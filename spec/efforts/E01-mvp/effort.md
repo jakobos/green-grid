@@ -1,6 +1,6 @@
 ---
 id: E01
-status: active
+status: done
 opened: 2026-10-12
 ---
 
