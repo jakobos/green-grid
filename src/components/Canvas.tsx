@@ -18,6 +18,14 @@ const CATALOG_RECORD: Record<string, (typeof CATALOG)[number]> = Object.fromEntr
   CATALOG.map((c) => [c.catalogId, c])
 )
 
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false
+  const tag = target.tagName.toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+  if ((target as HTMLElement).isContentEditable) return true
+  return false
+}
+
 export function Canvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
@@ -49,6 +57,7 @@ export function Canvas(): JSX.Element {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (isTypingTarget(e.target)) return
       if (e.ctrlKey && e.key === 'z') {
         e.preventDefault()
         if (e.shiftKey) {
