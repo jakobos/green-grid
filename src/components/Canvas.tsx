@@ -36,7 +36,7 @@ export function Canvas(): JSX.Element {
   const lastPointerPos = useRef({ x: 0, y: 0 })
   const garden = useActiveGarden()
   const viewport = useActiveViewport()
-  const { setViewport, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem, undo, redo } =
+  const { setViewport, addItem, selectedItemId, selectItem, clearSelection, moveItem, rotateItem, deleteItem, undo, redo, duplicateItem } =
     useGardenStore()
 
   useEffect(() => {
@@ -58,8 +58,15 @@ export function Canvas(): JSX.Element {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        if (!isTypingTarget(e.target) && selectedItemId) {
+          duplicateItem(selectedItemId)
+        }
+        return
+      }
       if (isTypingTarget(e.target)) return
-      if (e.ctrlKey && e.key === 'z') {
+      if (e.ctrlKey && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         if (e.shiftKey) {
           redo()
@@ -79,7 +86,7 @@ export function Canvas(): JSX.Element {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedItemId, rotateItem, deleteItem, undo, redo])
+  }, [selectedItemId, rotateItem, deleteItem, undo, redo, duplicateItem])
 
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {

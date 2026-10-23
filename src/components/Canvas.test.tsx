@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { Canvas } from './Canvas'
 import { useGardenStore } from '@/store/garden'
 import type { Garden, GardenItem, Viewport } from '@/types/garden'
@@ -224,5 +224,96 @@ describe('Canvas keydown guard', () => {
     expect(garden.items).toHaveLength(1)
 
     document.body.removeChild(inputEl)
+  })
+})
+
+describe('Canvas keydown: Ctrl+D and Ctrl+Shift+Z', () => {
+  const item: GardenItem = {
+    id: 'item-dup',
+    catalogId: 'tree-apple',
+    xMeters: 2,
+    yMeters: 3,
+    widthMeters: 4,
+    heightMeters: 4,
+    rotationDeg: 90,
+  }
+
+  beforeEach(() => {
+    useGardenStore.setState({
+      gardens: [{ ...testGarden, items: [item] }],
+      activeGardenId: testGarden.id,
+      viewports: { [testGarden.id]: testViewport },
+      selectedItemId: item.id,
+      past: [],
+      future: [],
+    })
+  })
+
+  it('Ctrl+D duplicates the selected item at x+0.5, y+0.5 and selects the copy', () => {
+    render(<Canvas />)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(items).toHaveLength(2)
+    const copy = items[1]
+    expect(copy.id).not.toBe(item.id)
+    expect(copy.xMeters).toBe(2.5)
+    expect(copy.yMeters).toBe(3.5)
+    expect(copy.rotationDeg).toBe(90)
+    expect(state.selectedItemId).toBe(copy.id)
+  })
+
+  it('Ctrl+D twice gives three items on a 0.5 m diagonal', () => {
+    render(<Canvas />)
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    })
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true }))
+    })
+    const state = useGardenStore.getState()
+    const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
+    expect(items).toHaveLength(3)
+    expect(items[0].xMeters).toBe(2)
+    expect(items[1].xMeters).toBe(2.5)
+    expect(items[2].xMeters).toBe(3)
+  })
+
+  it('Ctrl+D does nothing when nothing is selected but still prevents default', () => {
+    useGardenStore.setState({ selectedItemId: null })
+    render(<Canvas />)
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true, cancelable: true })
+    window.dispatchEvent(event)
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('Ctrl+D does nothing when typing in an input but still prevents default', () => {
+    render(<Canvas />)
+    const inputEl = document.createElement('input')
+    document.body.appendChild(inputEl)
+    const event = new KeyboardEvent('keydown', { key: 'd', ctrlKey: true, bubbles: true, cancelable: true })
+    Object.defineProperty(event, 'target', { value: inputEl })
+    window.dispatchEvent(event)
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
+    expect(event.defaultPrevented).toBe(true)
+    document.body.removeChild(inputEl)
+  })
+
+  it('Ctrl+Shift+Z redoes (case-insensitive key match)', () => {
+    // Directly set a redo-able state: future holds the item list to restore
+    useGardenStore.setState({
+      gardens: [{ ...testGarden, items: [] }],
+      past: [],
+      future: [[item]],
+      selectedItemId: null,
+    })
+    render(<Canvas />)
+    // Ctrl+Shift+Z: key is uppercase 'Z' with shiftKey held (the browser produces this)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Z', ctrlKey: true, shiftKey: true, bubbles: true }))
+    const state = useGardenStore.getState()
+    expect(state.gardens.find((g) => g.id === state.activeGardenId)!.items).toHaveLength(1)
   })
 })
