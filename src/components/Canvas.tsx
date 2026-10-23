@@ -3,6 +3,7 @@ import { Stage, Layer } from 'react-konva'
 import type Konva from 'konva'
 import { useGardenStore, useActiveGarden, useActiveViewport } from '@/store/garden'
 import { Grid, PIXELS_PER_METER } from './Grid'
+import { snapPosition } from '@/lib/snap'
 import { GardenItemShape } from './GardenItemShape'
 import { CATALOG } from '@/data/catalog'
 import type { Layer as GardenLayer } from '@/types/garden'
@@ -171,8 +172,8 @@ export function Canvas(): JSX.Element {
       const gardenPixelX = (stageX - viewport.x) / viewport.scale
       const gardenPixelY = (stageY - viewport.y) / viewport.scale
 
-      const xMeters = Math.round(gardenPixelX / PIXELS_PER_METER)
-      const yMeters = Math.round(gardenPixelY / PIXELS_PER_METER)
+      const xMeters = snapPosition(gardenPixelX / PIXELS_PER_METER)
+      const yMeters = snapPosition(gardenPixelY / PIXELS_PER_METER)
 
       addItem({ catalogItem, xMeters, yMeters })
     },

@@ -2,6 +2,7 @@ import { Rect, Circle, Text, Group } from 'react-konva'
 import type Konva from 'konva'
 import type { GardenItem, CatalogItem } from '@/types/garden'
 import { PIXELS_PER_METER } from './Grid'
+import { snapPosition } from '@/lib/snap'
 
 type GardenItemShapeProps = {
   item: GardenItem
@@ -34,8 +35,8 @@ export function GardenItemShape({
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>): void => {
     // e.target.x() is the center x after drag; convert back to top-left meters
-    const newXMeters = Math.round((e.target.x() - w / 2) / PIXELS_PER_METER)
-    const newYMeters = Math.round((e.target.y() - h / 2) / PIXELS_PER_METER)
+    const newXMeters = snapPosition((e.target.x() - w / 2) / PIXELS_PER_METER)
+    const newYMeters = snapPosition((e.target.y() - h / 2) / PIXELS_PER_METER)
     onMoveEnd(newXMeters, newYMeters)
   }
 
