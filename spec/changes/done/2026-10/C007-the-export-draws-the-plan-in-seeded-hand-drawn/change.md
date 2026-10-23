@@ -4,6 +4,7 @@ effort: E02
 slice: 1
 depends: []
 opened: 2026-10-23
+closed: 2026-10-23
 ---
 
 # C007 · The export draws the plan in seeded hand-drawn strokes on a paper background
