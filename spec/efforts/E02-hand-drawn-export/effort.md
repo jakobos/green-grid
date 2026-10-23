@@ -52,12 +52,15 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - 2026-10-23 · North direction is a per-garden setting in 8 steps of 45°; the compass rotates, the plan does not · user request; rotating the map would break the grid and meter labels
 - 2026-10-23 · North direction lives in E02 because its visible result is the plan's compass; its header control is plain editor chrome · the setting exists for the export
 - 2026-10-23 · Changing north, like name and dimensions, is not recorded in undo history · matches existing garden setters
+- 2026-10-23 · The map uses the largest standard plan scale that fits (1:10 … 1:1000), not an arbitrary fit factor · the printed "1:N" and the scale bar stay true and readable
+- 2026-10-23 · The legend is a fixed-width column on the right in both orientations; the orientation with the larger map scale wins · one layout rule; 15 catalog entries fit one column
+- 2026-10-23 · Stroke widths, wobble and text sizes are set in paper units, independent of garden size · a 3 m bed and a 100 m plot print with the same line weight
 
 ## Roadmap
 
 <!-- guild:roadmap — slice text is yours; marks and change ids are generated -->
 1. [ ] Sketch rendering: seeded roughjs strokes for grid, boundary, items and compass on a paper background — C007 (planned)
-2. [ ] A4 sheet: fixed page with orientation from aspect ratio, fit-to-page map, scale bar, PNG at 300 dpi
+2. [ ] A4 sheet: fixed page with orientation from aspect ratio, fit-to-page map, scale bar, PNG at 300 dpi — C010 (planned)
 3. [ ] PDF download of the A4 sheet via jspdf
 4. [ ] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind
 5. [ ] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend
