@@ -120,7 +120,7 @@ describe('Canvas', () => {
       expect(items[0].catalogId).toBe('tree-apple')
     })
 
-    it('snaps fractional coords to the nearest meter', () => {
+    it('snaps fractional coords to the nearest 0.5 m', () => {
       render(<Canvas />)
 
       const container = screen.getByTestId('canvas-container')
@@ -129,14 +129,14 @@ describe('Canvas', () => {
         width: 800, height: 600, x: 0, y: 0, toJSON: () => {},
       })
 
-      // clientX=95 → 95/60≈1.583m → rounds to 2
-      // clientY=60 → 60/60=1.0m → rounds to 1
+      // clientX=95 → 95/60≈1.583m → snaps to 1.5
+      // clientY=60 → 60/60=1.0m → snaps to 1.0
       dispatchDrop(container, 'tree-apple', 95, 60)
 
       const state = useGardenStore.getState()
       const { items } = state.gardens.find((g) => g.id === state.activeGardenId)!
       expect(items).toHaveLength(1)
-      expect(items[0].xMeters).toBe(2)
+      expect(items[0].xMeters).toBe(1.5)
       expect(items[0].yMeters).toBe(1)
     })
 
