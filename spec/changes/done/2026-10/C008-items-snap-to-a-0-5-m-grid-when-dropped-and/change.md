@@ -4,6 +4,7 @@ effort: E03
 slice: 1
 depends: []
 opened: 2026-10-23
+closed: 2026-10-23
 ---
 
 # C008 · Items snap to a 0.5 m grid when dropped and moved
