@@ -1,6 +1,3 @@
 # C009 · The sidebar catalog filters by typed text — outcome
 
-<!-- Three to six sentences: what changed, the merge commit, and anything the next reader must know.
-     Later workers on the same effort receive this text in their brief. -->
-
-Landed 2026-10-23 with `guild land 2026-10-23-e03-search-e745e5`: merge commit 318f2b7 of guild/2026-10-23-e03-search-e745e5 into master.
+The expanded sidebar has a search input (`data-testid="catalog-search"`, `type="search"`, screen-reader label "Search catalog") above the layer list. It matches the trimmed query case-insensitively against item name and description. Layers with no matches are hidden, "No items match." shows when nothing matches, and Escape clears the query. While a query is active, a collapsed layer still shows its matches. `Canvas.tsx` has a module-level `isTypingTarget(target)` guard at the top of the keydown handler, so `r`, Delete/Backspace and Ctrl+Z typed in any input, textarea, select or content-editable no longer touch the canvas; later shortcuts (Ctrl+D in C011) inherit it. Landed as 318f2b7 (bookkeeping 6114da5). The query is not persisted. Checked live: "ROSE", "pollin" (description match), empty state, Escape, dropping a filtered item, and shortcuts typed in the search and garden-name fields.

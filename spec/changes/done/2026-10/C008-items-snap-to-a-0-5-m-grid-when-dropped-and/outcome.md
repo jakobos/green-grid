@@ -1,6 +1,3 @@
 # C008 · Items snap to a 0.5 m grid when dropped and moved — outcome
 
-<!-- Three to six sentences: what changed, the merge commit, and anything the next reader must know.
-     Later workers on the same effort receive this text in their brief. -->
-
-Landed 2026-10-23 with `guild land 2026-10-23-e03-snap-continue-f70043`: merge commit a20e7ad of guild/2026-10-23-e03-snap-2bf76e into master.
+Added `src/lib/snap.ts` with `POSITION_SNAP_METERS = 0.5` and a pure `snapPosition(meters)`. It rounds half-up to the nearest 0.5 and returns `0`, never `-0`. `Canvas.tsx` `handleDrop` and `GardenItemShape.tsx` `handleDragEnd` call it instead of `Math.round`, so dropped and dragged items, rotated ones included, store half-meter top-left positions. Landed as a20e7ad (bookkeeping 083f856). No persist `version` bump: whole-meter positions in existing gardens stay valid. The editor and export grids still draw 1 m lines. `snapSize` and the 0.1 m size step are not added yet; slice 4 adds them in the same module. Checked live: drop at (9, 5.5), a rotated drag to (9.5, 6), undo and Redo button, and reload all kept exact half-meter values. Ctrl+Shift+Z does nothing (key is `'Z'` with Shift); C011 fixes it.
