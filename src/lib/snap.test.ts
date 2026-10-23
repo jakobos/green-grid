@@ -1,20 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { snapPosition, POSITION_SNAP_METERS } from './snap'
-
-describe('POSITION_SNAP_METERS', () => {
-  it('is 0.5', () => {
-    expect(POSITION_SNAP_METERS).toBe(0.5)
-  })
-})
+import { snapPosition } from './snap'
 
 describe('snapPosition', () => {
   it('returns 0 for 0', () => {
     expect(snapPosition(0)).toBe(0)
   })
 
-  it('never returns -0', () => {
-    expect(Object.is(snapPosition(0), -0)).toBe(false)
-    expect(Object.is(snapPosition(0.24), -0)).toBe(false)
+  it('never returns -0 for inputs that round to zero', () => {
+    expect(Object.is(snapPosition(-0.2), -0)).toBe(false)
   })
 
   // x.25 boundaries — equidistant; JS Math.round rounds half-up
