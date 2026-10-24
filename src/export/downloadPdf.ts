@@ -36,6 +36,6 @@ export function downloadPdf(
 
   // A4 in mm: portrait 210 × 297 mm, landscape 297 × 210 mm.
   const [pageW, pageH] = isLandscape ? [297, 210] : [210, 297]
-  doc.addImage(dataUrl, 'PNG', 0, 0, pageW, pageH)
+  doc.addImage(dataUrl, 'PNG', 0, 0, pageW, pageH, undefined, 'FAST')
   doc.save(filename)
 }

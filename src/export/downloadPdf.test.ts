@@ -65,6 +65,8 @@ describe('downloadPdf', () => {
       0,
       210,
       297,
+      undefined,
+      'FAST',
     )
   })
 
@@ -79,6 +81,8 @@ describe('downloadPdf', () => {
       0,
       297,
       210,
+      undefined,
+      'FAST',
     )
   })
 
