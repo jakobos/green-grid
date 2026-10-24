@@ -5,6 +5,7 @@ import type { Garden, GardenItem } from '@/types/garden'
 import {
   renderExportStage,
   buildLegendGroups,
+  buildMarkerNumbers,
 } from './renderExportStage'
 import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm } from './sheetLayout'
 import { seedHash } from './seedHash'
@@ -145,7 +146,7 @@ describe('renderExportStage', () => {
     stage.destroy()
   })
 
-  it('draws every placed item with its rotation, ordered by layer', () => {
+  it('draws every placed item with its rotation, ordered by layer; no name text in item groups', () => {
     const tree = CATALOG.find((c) => c.layer === 5)!
     const bulb = CATALOG.find((c) => c.layer === 1)!
     const garden = { ...baseGarden, items: [item('1', tree.catalogId), item('2', bulb.catalogId)] }
@@ -153,7 +154,93 @@ describe('renderExportStage', () => {
     const groups = stage.find<Konva.Group>('.garden-item')
     expect(groups).toHaveLength(2)
     expect(groups.every((g) => g.rotation() === 90)).toBe(true)
-    expect(groups[0].findOne<Konva.Text>('Text')!.text()).toBe(bulb.name)
+    // No catalog name text inside item groups — markers live outside the rotated group
+    for (const g of groups) {
+      expect(g.find('Text')).toHaveLength(0)
+    }
+    stage.destroy()
+  })
+})
+
+describe('buildMarkerNumbers', () => {
+  it('returns empty map for empty groups', () => {
+    expect(buildMarkerNumbers([])).toEqual(new Map())
+  })
+
+  it('assigns 1-based numbers in layer order then entry order', () => {
+    const layer1 = CATALOG.find((c) => c.layer === 1)!
+    const layer5 = CATALOG.find((c) => c.layer === 5)!
+    const garden = { ...baseGarden, items: [item('a', layer5.catalogId), item('b', layer1.catalogId)] }
+    const groups = buildLegendGroups(garden, CATALOG)
+    const nums = buildMarkerNumbers(groups)
+    // layer 1 comes first → number 1, layer 5 → number 2
+    expect(nums.get(layer1.catalogId)).toBe(1)
+    expect(nums.get(layer5.catalogId)).toBe(2)
+  })
+
+  it('assigns consecutive numbers across multiple layers', () => {
+    const entries = CATALOG.slice(0, 5)
+    // Fake a garden that has all five items
+    const garden = {
+      ...baseGarden,
+      items: entries.map((e, i) => item(String(i), e.catalogId)),
+    }
+    const groups = buildLegendGroups(garden, CATALOG)
+    const nums = buildMarkerNumbers(groups)
+    // All five get distinct 1-based numbers
+    const values = [...nums.values()].sort((a, b) => a - b)
+    expect(values).toEqual([1, 2, 3, 4, 5])
+  })
+})
+
+describe('marker placement', () => {
+  const tulipCatalog = CATALOG.find((c) => c.name.includes('Tulip'))!
+
+  it('renders one marker per unique catalog type (dedupe within 6 mm)', () => {
+    // Two tulips at the same spot — only one marker should be drawn
+    const tinyItem = (id: string): GardenItem => ({
+      id,
+      catalogId: tulipCatalog.catalogId,
+      xMeters: 1,
+      yMeters: 1,
+      widthMeters: 0.2,
+      heightMeters: 0.2,
+      rotationDeg: 0,
+    })
+    const garden = { ...baseGarden, items: [tinyItem('t1'), tinyItem('t2')] }
+    const stage = renderExportStage(garden, CATALOG)
+    // Both items are at same position → dedupe → one marker
+    expect(stage.find('.plan-marker')).toHaveLength(1)
+    stage.destroy()
+  })
+
+  it('renders two markers when same type is > 6 mm apart', () => {
+    // 16×10 m → landscape 1:100; 1 m = 10 mm on paper > 6 mm dedupe threshold
+    const garden = {
+      ...baseGarden,
+      widthMeters: 16,
+      heightMeters: 10,
+      items: [
+        { id: 't1', catalogId: tulipCatalog.catalogId, xMeters: 1, yMeters: 1, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
+        { id: 't2', catalogId: tulipCatalog.catalogId, xMeters: 2, yMeters: 1, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
+      ],
+    }
+    const stage = renderExportStage(garden, CATALOG)
+    expect(stage.find('.plan-marker')).toHaveLength(2)
+    stage.destroy()
+  })
+
+  it('places marker at top-right corner for items smaller than 8 mm', () => {
+    // 0.2 m bulb at 1:1000 → drawn at MIN_SYMBOL_PX (< 8mm threshold) → top-right placement
+    const bigGarden = { ...baseGarden, widthMeters: 100, heightMeters: 100, items: [
+      { id: 'b1', catalogId: tulipCatalog.catalogId, xMeters: 5, yMeters: 5, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
+    ]}
+    const stage = renderExportStage(bigGarden, CATALOG)
+    const markers = stage.find<Konva.Group>('.plan-marker')
+    expect(markers).toHaveLength(1)
+    // Marker exists and has a label with its number
+    const label = markers[0].findOne<Konva.Text>('.marker-label')
+    expect(label?.text()).toBe('1')
     stage.destroy()
   })
 })

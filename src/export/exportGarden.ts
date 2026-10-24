@@ -1,4 +1,5 @@
 import type { CatalogItem, Garden } from '@/types/garden'
+import '@fontsource/patrick-hand'
 import { downloadPng } from './downloadPng'
 import { downloadPdf } from './downloadPdf'
 import { renderExportStage } from './renderExportStage'
@@ -24,7 +25,8 @@ function pdfFileId(garden: Garden): string {
 }
 
 /** Export the garden as a PNG download. */
-export function exportGarden(garden: Garden, catalog: CatalogItem[]): void {
+export async function exportGarden(garden: Garden, catalog: CatalogItem[]): Promise<void> {
+  await document.fonts.load("1em 'Patrick Hand'")
   const stage = renderExportStage(garden, catalog)
   try {
     downloadPng(stage, gardenFilename(garden, 'png'))
@@ -39,7 +41,8 @@ export function exportGarden(garden: Garden, catalog: CatalogItem[]): void {
  * Creation date and file ID are derived from stable garden fields so that two
  * exports of the same garden are byte-identical.
  */
-export function exportGardenPdf(garden: Garden, catalog: CatalogItem[]): void {
+export async function exportGardenPdf(garden: Garden, catalog: CatalogItem[]): Promise<void> {
+  await document.fonts.load("1em 'Patrick Hand'")
   const stage = renderExportStage(garden, catalog)
   try {
     downloadPdf(
