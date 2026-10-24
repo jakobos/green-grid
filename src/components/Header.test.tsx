@@ -190,6 +190,29 @@ describe('Header', () => {
   })
 })
 
+describe('Header north direction', () => {
+  it('renders the north direction select with default "↑ N"', () => {
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    expect(select).toBeInTheDocument()
+    expect((select as HTMLSelectElement).value).toBe('0')
+  })
+
+  it('calls setNorthDeg when a direction is chosen', () => {
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    fireEvent.change(select, { target: { value: '90' } })
+    expect(activeGarden().northDeg).toBe(90)
+  })
+
+  it('reflects northDeg from the store', () => {
+    useGardenStore.getState().setNorthDeg(180)
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    expect((select as HTMLSelectElement).value).toBe('180')
+  })
+})
+
 describe('Header export', () => {
   it('exports the active garden when Export PNG is clicked', async () => {
     const { exportGarden } = await import('@/export/exportGarden')
