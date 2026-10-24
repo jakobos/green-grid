@@ -4,6 +4,7 @@ effort: E02
 slice: 3
 depends: [C010]
 opened: 2026-10-24
+closed: 2026-10-24
 ---
 
 # C013 · Export PDF downloads the same A4 sheet as a one-page PDF
