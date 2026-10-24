@@ -463,7 +463,7 @@ function drawLegend(
     cursor += headingH
     for (const entry of group.entries) {
       const num = markerNumbers.get(entry.catalogId) ?? 0
-      const rowMidY = cursor + rowH / 2
+      const rowMidY = cursor + swatchSz / 2
       drawCircledNumber(layer, x + MARKER_R_PX, rowMidY, num, seedHash(entry.catalogId + ':num'), 'legend-marker')
       layer.add(
         new Konva.Shape({
@@ -631,15 +631,13 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
     // Centre of item in gardenLayer coords
     const itemCx = gItem.xMeters * pxPerMeter + w / 2
     const itemCy = gItem.yMeters * pxPerMeter + h / 2
-    // If drawn symbol is ≥ 8 mm on both axes: centre; else top-right corner
-    const markerCx =
-      drawnW >= MARKER_THRESHOLD_PX && drawnH >= MARKER_THRESHOLD_PX
-        ? itemCx
-        : itemCx + drawnW / 2
-    const markerCy =
-      drawnW >= MARKER_THRESHOLD_PX && drawnH >= MARKER_THRESHOLD_PX
-        ? itemCy
-        : itemCy - drawnH / 2
+    // If drawn symbol is ≥ 8 mm on both axes: centre on symbol.
+    // Otherwise: push the marker outside the top-right corner by its own
+    // radius plus 0.5 mm so the paper fill never covers the drawn symbol.
+    const isSmall = !(drawnW >= MARKER_THRESHOLD_PX && drawnH >= MARKER_THRESHOLD_PX)
+    const cornerOffsetPx = MARKER_R_PX + mmToPx(0.5)
+    const markerCx = isSmall ? itemCx + drawnW / 2 + cornerOffsetPx : itemCx
+    const markerCy = isSmall ? itemCy - drawnH / 2 - cornerOffsetPx : itemCy
     // Dedupe: skip if same number already within 6 mm of this position
     if (
       drawnMarkers.some(

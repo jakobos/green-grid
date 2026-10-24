@@ -7,7 +7,7 @@ import {
   buildLegendGroups,
   buildMarkerNumbers,
 } from './renderExportStage'
-import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm } from './sheetLayout'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -230,17 +230,40 @@ describe('marker placement', () => {
     stage.destroy()
   })
 
-  it('places marker at top-right corner for items smaller than 8 mm', () => {
-    // 0.2 m bulb at 1:1000 → drawn at MIN_SYMBOL_PX (< 8mm threshold) → top-right placement
-    const bigGarden = { ...baseGarden, widthMeters: 100, heightMeters: 100, items: [
-      { id: 'b1', catalogId: tulipCatalog.catalogId, xMeters: 5, yMeters: 5, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
-    ]}
+  it('places marker clear of the drawn box for items smaller than 8 mm', () => {
+    // 0.2 m tulip at 1:1000 → drawn at MIN_SYMBOL_PX (< 8 mm threshold)
+    // marker centre pushed r + 0.5 mm outside the top-right corner
+    const bigGarden = {
+      ...baseGarden,
+      widthMeters: 100,
+      heightMeters: 100,
+      items: [{ id: 'b1', catalogId: tulipCatalog.catalogId, xMeters: 5, yMeters: 5, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 }],
+    }
     const stage = renderExportStage(bigGarden, CATALOG)
     const markers = stage.find<Konva.Group>('.plan-marker')
     expect(markers).toHaveLength(1)
-    // Marker exists and has a label with its number
     const label = markers[0].findOne<Konva.Text>('.marker-label')
     expect(label?.text()).toBe('1')
+
+    // Verify marker circle doesn't intersect the drawn box.
+    // Both the plan-marker group and the garden-item group live on gardenLayer,
+    // so their .x()/.y() are directly comparable in gardenLayer coords.
+    const markerGroup = markers[0]
+    const itemGroup = stage.find<Konva.Group>('.garden-item')[0]
+    const MARKER_R_PX = mmToPx(2)
+    // Drawn box: centre at (itemGroup.x(), itemGroup.y()), half-extents = offsetX/offsetY
+    const boxRightEdge = itemGroup.x() + itemGroup.offsetX()   // = itemCx + drawnW/2
+    const boxTopEdge   = itemGroup.y() - itemGroup.offsetY()   // = itemCy − drawnH/2
+    // Marker group top-left is at (markerGroup.x(), markerGroup.y())
+    // Marker circle spans [markerGroup.x() … markerGroup.x() + 2r] horizontally
+    //                 and [markerGroup.y() … markerGroup.y() + 2r] vertically
+    expect(markerGroup.x()).toBeGreaterThan(boxRightEdge)         // left edge > box right
+    expect(markerGroup.y() + MARKER_R_PX * 2).toBeLessThan(boxTopEdge) // bottom < box top
+    // Gap on each axis should be exactly 0.5 mm
+    const GAP_PX = mmToPx(0.5)
+    expect(markerGroup.x() - boxRightEdge).toBeCloseTo(GAP_PX, 0)
+    expect(boxTopEdge - (markerGroup.y() + MARKER_R_PX * 2)).toBeCloseTo(GAP_PX, 0)
+
     stage.destroy()
   })
 })
