@@ -4,6 +4,7 @@ effort: E02
 slice: 2
 depends: [C007]
 opened: 2026-10-23
+closed: 2026-10-24
 ---
 
 # C010 · The export is one A4 sheet at 300 dpi with a fit-to-page map and a scale bar
