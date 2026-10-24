@@ -4,6 +4,7 @@ effort: E02
 slice: 4
 depends: [C010]
 opened: 2026-10-24
+closed: 2026-10-24
 ---
 
 # C014 · Each kind of item prints as its own hand-drawn symbol on the export

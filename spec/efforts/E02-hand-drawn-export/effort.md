@@ -64,7 +64,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 1. [x] Sketch rendering: seeded roughjs strokes for grid, boundary, items and compass on a paper background — C007
 2. [x] A4 sheet: fixed page with orientation from aspect ratio, fit-to-page map, scale bar, PNG at 300 dpi — C010
 3. [x] PDF download of the A4 sheet via jspdf — C013
-4. [ ] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind — C014 (planned)
+4. [x] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind — C014
 5. [ ] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend
 6. [ ] Plant list: legend quantities, cost per entry, and a grand total
 7. [ ] North direction: per-garden setting in 45° steps, header control, editor north arrow, export compass follows it
