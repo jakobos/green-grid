@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowUp } from 'lucide-react'
 import { Stage, Layer } from 'react-konva'
 import type Konva from 'konva'
 import { useGardenStore, useActiveGarden, useActiveViewport } from '@/store/garden'
@@ -199,7 +200,7 @@ export function Canvas(): JSX.Element {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-hidden"
+      className="relative flex-1 overflow-hidden"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       data-testid="canvas-container"
@@ -258,6 +259,15 @@ export function Canvas(): JSX.Element {
           })}
         </Stage>
       )}
+      {/* North arrow overlay — rotates to show where north is, ignores pointer events */}
+      <div
+        className="pointer-events-none absolute right-3 top-3 flex flex-col items-center gap-0.5 text-foreground/60"
+        style={{ transform: `rotate(${garden.northDeg}deg)` }}
+        aria-hidden="true"
+      >
+        <span className="text-xs font-bold leading-none">N</span>
+        <ArrowUp size={14} />
+      </div>
     </div>
   )
 }

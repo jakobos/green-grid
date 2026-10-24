@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useGardenStore, useActiveGarden } from '@/store/garden'
+import type { NorthDeg } from '@/types/garden'
 import { CATALOG } from '@/data/catalog'
 
 export function Header(): JSX.Element {
@@ -11,6 +12,7 @@ export function Header(): JSX.Element {
     setGardenName,
     setGardenWidth,
     setGardenHeight,
+    setNorthDeg,
     selectedItemId,
     rotateItem,
     deleteItem,
@@ -102,6 +104,24 @@ export function Header(): JSX.Element {
           }}
           className="w-20"
         />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <select
+          aria-label="North direction"
+          value={garden.northDeg}
+          onChange={(e) => setNorthDeg(Number(e.target.value) as NorthDeg)}
+          className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm"
+        >
+          <option value={0}>↑ N</option>
+          <option value={45}>↗ NE</option>
+          <option value={90}>→ E</option>
+          <option value={135}>↘ SE</option>
+          <option value={180}>↓ S</option>
+          <option value={225}>↙ SW</option>
+          <option value={270}>← W</option>
+          <option value={315}>↖ NW</option>
+        </select>
       </div>
 
       <div className="ml-auto flex items-center gap-2">

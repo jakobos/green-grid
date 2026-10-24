@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Garden, GardenItem, Viewport } from '@/types/garden'
+import type { Garden, GardenItem, Viewport, NorthDeg } from '@/types/garden'
 import type { CatalogItem } from '@/types/garden'
 import { POSITION_SNAP_METERS } from '@/lib/snap'
 
@@ -24,6 +24,7 @@ type GardenStore = {
   setGardenName: (name: string) => void
   setGardenWidth: (widthMeters: number) => void
   setGardenHeight: (heightMeters: number) => void
+  setNorthDeg: (deg: NorthDeg) => void
   setViewport: (viewport: Viewport) => void
   addItem: (payload: AddItemPayload) => void
   removeItem: (id: string) => void
@@ -47,6 +48,7 @@ function makeGarden(name: string): Garden {
     name,
     widthMeters: 20,
     heightMeters: 20,
+    northDeg: 0,
     items: [],
     createdAt: now,
     updatedAt: now,
@@ -118,6 +120,16 @@ export const useGardenStore = create<GardenStore>()(
             updatedAt: new Date().toISOString(),
           })),
         })),
+
+      setNorthDeg: (deg) =>
+        set((state) => ({
+          gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+            ...g,
+            northDeg: deg,
+            updatedAt: new Date().toISOString(),
+          })),
+        })),
+
 
       setViewport: (viewport) =>
         set((state) => ({
@@ -307,21 +319,32 @@ export const useGardenStore = create<GardenStore>()(
     }),
     {
       name: 'green-grid-garden',
-      version: 1,
+      version: 2,
       partialize: (state) => ({
         gardens: state.gardens,
         activeGardenId: state.activeGardenId,
         viewports: state.viewports,
       }),
       migrate: (persisted: unknown, version: number) => {
+        // v0: single-garden {garden, viewport} → v2 multi-garden with northDeg
         if (version === 0) {
-          const old = persisted as { garden?: Garden; viewport?: Viewport }
+          type V0 = { garden?: Omit<Garden, 'northDeg'>; viewport?: Viewport }
+          const old = persisted as V0
           const garden = old.garden ?? makeGarden('My Garden')
           const viewport = old.viewport ?? { ...defaultViewport }
           return {
-            gardens: [garden],
+            gardens: [{ ...garden, northDeg: 0 as const }],
             activeGardenId: garden.id,
             viewports: { [garden.id]: viewport },
+          }
+        }
+        // v1: multi-garden without northDeg → v2 with northDeg: 0
+        if (version === 1) {
+          type V1 = { gardens: Omit<Garden, 'northDeg'>[]; activeGardenId: string; viewports: Record<string, Viewport> }
+          const old = persisted as V1
+          return {
+            ...old,
+            gardens: old.gardens.map((g) => ({ ...g, northDeg: 0 as const })),
           }
         }
         return persisted

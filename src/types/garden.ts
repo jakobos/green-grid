@@ -1,4 +1,6 @@
 export type Layer = 1 | 2 | 3 | 4 | 5
+export type NorthDeg = 0 | 45 | 90 | 135 | 180 | 225 | 270 | 315
+
 
 export type ItemSymbol = 'tree' | 'shrub' | 'bed' | 'bulb' | 'groundcover' | 'herb' | 'vegetable'
 
@@ -30,6 +32,7 @@ export type Garden = {
   name: string
   widthMeters: number
   heightMeters: number
+  northDeg: NorthDeg
   items: GardenItem[]
   createdAt: string
   updatedAt: string
