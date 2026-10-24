@@ -438,6 +438,14 @@ describe('useGardenStore', () => {
       expect(state.gardens[0].northDeg).toBe(0)
       expect(state.viewports['v1-id']).toEqual(v1Viewport)
     })
+
+    it('does not throw and preserves store state for malformed v1 with non-array gardens', () => {
+      localStorage.setItem(
+        'green-grid-garden',
+        JSON.stringify({ state: { gardens: null, activeGardenId: 'x', viewports: {} }, version: 1 })
+      )
+      expect(() => useGardenStore.persist.rehydrate()).not.toThrow()
+    })
   })
 
   describe('setNorthDeg', () => {

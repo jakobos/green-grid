@@ -1,7 +1,7 @@
 import Konva from 'konva'
 import rough from 'roughjs'
 import type { Drawable } from 'roughjs/bin/core'
-import type { CatalogItem, Garden, GardenItem } from '@/types/garden'
+import type { CatalogItem, Garden, GardenItem, NorthDeg } from '@/types/garden'
 import { LAYER_NAMES } from '@/data/catalog'
 import { seedHash } from './seedHash'
 import { drawSymbol, MIN_SYMBOL_PX } from './symbolDrawables'
@@ -260,7 +260,7 @@ function drawItem(
  * Arrow points in the northDeg direction (clockwise from up); "N" stays upright
  * just past the arrow tip. Both are centred at (x, y); seed from gardenId.
  */
-function drawCompass(layer: Konva.Layer, x: number, y: number, northDeg: number, gardenId: string): void {
+function drawCompass(layer: Konva.Layer, x: number, y: number, northDeg: NorthDeg, gardenId: string): void {
   // Scale old 60 px design to 14 mm paper height
   const shapeH = mmToPx(14)
   const s = shapeH / 60
@@ -355,11 +355,13 @@ function drawCompass(layer: Konva.Layer, x: number, y: number, northDeg: number,
  * labelled with the same metre count so both agree to within rounding.
  * Uses a fixed seed (independent of garden) for determinism.
  */
-function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number): void {
+function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number, maxBarPx?: number): void {
   const barMeters = scaleBarLengthMeters(scale)
-  const barPx = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
   const tickH = mmToPx(1.5)
   const sw = Math.ceil(SCALE_BAR_SW)
+  // Shape right edge is barPx + sw; cap so shape right ≤ group.x + maxBarPx.
+  const barPxFull = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
+  const barPx = maxBarPx !== undefined ? Math.min(barPxFull, Math.max(0, maxBarPx - sw)) : barPxFull
 
   const gen = rough.generator()
   const seed = seedHash('scale-bar')
@@ -731,7 +733,7 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
       name: 'dimensions',
     }),
   )
-  drawScaleBar(content, titleTextX, yBar, scale)
+  drawScaleBar(content, titleTextX, yBar, scale, legendX - mmToPx(20) - titleTextX)
   drawCompass(content, legendX - mmToPx(12), margin + mmToPx(11), garden.northDeg, garden.id)
 
   // Garden layer — (0,0) is the garden's top-left corner in paper pixels ────

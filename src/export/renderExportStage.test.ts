@@ -10,7 +10,7 @@ import {
   computeLegendTotal,
 } from './renderExportStage'
 import type { LegendGroup } from './renderExportStage'
-import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx, MARGIN_MM, TITLE_H_MM } from './sheetLayout'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx, ptToPx, PX_PER_MM, MARGIN_MM, TITLE_H_MM, LABEL_SIDE_MM, LEGEND_W_MM, scaleBarLengthMeters } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -399,3 +399,34 @@ describe('legend height', () => {
   })
 })
 
+describe('scale bar right edge clears compass box for all 8 NorthDeg values (1×1 m at 1:10)', () => {
+  // Pure layout math — no Konva stages, no rendering, no RAF timers.
+  // Mirrors the constants used by drawScaleBar and drawCompass in renderExportStage.
+  it('barRight < compassGroupLeft for every direction', () => {
+    const scaleSW = Math.ceil(0.45 * PX_PER_MM) // SCALE_BAR_SW = 0.45 mm
+    const compassSW = Math.ceil(0.5 * PX_PER_MM) // COMPASS_SW = 0.5 mm
+
+    const titleTextX = mmToPx(MARGIN_MM) + mmToPx(LABEL_SIDE_MM)
+    const legendX = sheetSizePx('portrait').width - mmToPx(MARGIN_MM) - mmToPx(LEGEND_W_MM)
+    const maxBarPx = legendX - mmToPx(20) - titleTextX
+    const barPxFull = Math.round(scaleBarLengthMeters(10) * (1000 / 10) * PX_PER_MM)
+    const barPx = Math.min(barPxFull, Math.max(0, maxBarPx - scaleSW))
+    // Scale bar shape right = titleTextX + shape.x + shape.width
+    //   shape.x = −scaleSW, shape.width = barPx + 2·scaleSW → right = barPx + scaleSW
+    const barRight = titleTextX + barPx + scaleSW
+
+    const compassX = legendX - mmToPx(12)
+    const s = mmToPx(14) / 60
+    const nSize = ptToPx(10)
+    const nDist = 18 * s + nSize / 2
+    const R = Math.round(20 * s + compassSW + 1)
+
+    const dirs = [0, 45, 90, 135, 180, 225, 270, 315] as const
+    for (const deg of dirs) {
+      const rad = (deg * Math.PI) / 180
+      const nTextLeft = compassX + nDist * Math.sin(rad) - nSize / 2
+      const compassGroupLeft = Math.min(compassX - R, nTextLeft)
+      expect(barRight, `northDeg ${deg}°: barRight=${barRight} compassGroupLeft=${compassGroupLeft}`).toBeLessThan(compassGroupLeft)
+    }
+  })
+})

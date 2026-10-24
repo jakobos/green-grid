@@ -130,7 +130,6 @@ export const useGardenStore = create<GardenStore>()(
           })),
         })),
 
-
       setViewport: (viewport) =>
         set((state) => ({
           viewports: { ...state.viewports, [state.activeGardenId]: viewport },
@@ -326,28 +325,33 @@ export const useGardenStore = create<GardenStore>()(
         viewports: state.viewports,
       }),
       migrate: (persisted: unknown, version: number) => {
-        // v0: single-garden {garden, viewport} → v2 multi-garden with northDeg
+        let data = persisted
+
+        // step 1: v0 → v1 shape (single-garden object → multi-garden array)
         if (version === 0) {
           type V0 = { garden?: Omit<Garden, 'northDeg'>; viewport?: Viewport }
-          const old = persisted as V0
+          const old = data as V0
           const garden = old.garden ?? makeGarden('My Garden')
           const viewport = old.viewport ?? { ...defaultViewport }
-          return {
-            gardens: [{ ...garden, northDeg: 0 as const }],
+          data = {
+            gardens: [garden],
             activeGardenId: garden.id,
             viewports: { [garden.id]: viewport },
           }
         }
-        // v1: multi-garden without northDeg → v2 with northDeg: 0
-        if (version === 1) {
-          type V1 = { gardens: Omit<Garden, 'northDeg'>[]; activeGardenId: string; viewports: Record<string, Viewport> }
-          const old = persisted as V1
+
+        // step 2: v0 and v1 → v2 (add northDeg: 0 to each garden; v0 falls through)
+        if (version <= 1) {
+          type V1Like = { gardens?: unknown; activeGardenId?: string; viewports?: unknown }
+          const old = data as V1Like
+          if (!Array.isArray(old?.gardens)) return persisted
           return {
             ...old,
-            gardens: old.gardens.map((g) => ({ ...g, northDeg: 0 as const })),
+            gardens: (old.gardens as Omit<Garden, 'northDeg'>[]).map((g) => ({ ...g, northDeg: 0 as const })),
           }
         }
-        return persisted
+
+        return data
       },
     }
   )
