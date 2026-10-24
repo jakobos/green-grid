@@ -100,7 +100,7 @@ describe('Header', () => {
     useGardenStore.getState().addItem({ catalogItem: {
       catalogId: 'tree-apple', name: 'Apple Tree', description: '',
       layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
-      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35, symbol: 'tree',
     }, xMeters: 0, yMeters: 0 })
     const id = activeGarden().items[0].id
     useGardenStore.setState({ selectedItemId: id })
@@ -113,7 +113,7 @@ describe('Header', () => {
     useGardenStore.getState().addItem({ catalogItem: {
       catalogId: 'tree-apple', name: 'Apple Tree', description: '',
       layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
-      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35, symbol: 'tree',
     }, xMeters: 0, yMeters: 0 })
     const id = activeGarden().items[0].id
     useGardenStore.setState({ selectedItemId: id })
@@ -137,7 +137,7 @@ describe('Header', () => {
     useGardenStore.getState().addItem({ catalogItem: {
       catalogId: 'tree-apple', name: 'Apple Tree', description: '',
       layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
-      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35, symbol: 'tree',
     }, xMeters: 0, yMeters: 0 })
     render(<Header />)
     expect(screen.getByLabelText('Undo')).not.toBeDisabled()
@@ -147,7 +147,7 @@ describe('Header', () => {
     useGardenStore.getState().addItem({ catalogItem: {
       catalogId: 'tree-apple', name: 'Apple Tree', description: '',
       layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
-      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35, symbol: 'tree',
     }, xMeters: 0, yMeters: 0 })
     useGardenStore.getState().undo()
     render(<Header />)
@@ -158,7 +158,7 @@ describe('Header', () => {
     useGardenStore.getState().addItem({ catalogItem: {
       catalogId: 'tree-apple', name: 'Apple Tree', description: '',
       layer: 5, defaultWidthMeters: 4, defaultHeightMeters: 4,
-      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35,
+      shape: 'circle', color: '#2D5A27', estimatedCostEur: 35, symbol: 'tree',
     }, xMeters: 0, yMeters: 0 })
     render(<Header />)
     fireEvent.click(screen.getByLabelText('Undo'))

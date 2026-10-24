@@ -1,5 +1,7 @@
 export type Layer = 1 | 2 | 3 | 4 | 5
 
+export type ItemSymbol = 'tree' | 'shrub' | 'bed' | 'bulb' | 'groundcover' | 'herb' | 'vegetable'
+
 export type CatalogItem = {
   catalogId: string
   name: string
@@ -10,6 +12,7 @@ export type CatalogItem = {
   shape: 'rect' | 'circle'
   color: string
   estimatedCostEur: number
+  symbol: ItemSymbol
 }
 
 export type GardenItem = {
