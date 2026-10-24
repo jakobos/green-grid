@@ -184,40 +184,42 @@ describe('labelStepMeters', () => {
 })
 
 describe('scaleBarLengthMeters', () => {
-  it('1:50 → 2 m (2*1000/50 = 40 mm, in range)', () => {
+  it('1:10 → 0.5 m (0.5×1000/10 = 50 mm, in range)', () => {
+    expect(scaleBarLengthMeters(10)).toBe(0.5)
+  })
+
+  it('1:50 → 2 m (2×1000/50 = 40 mm, in range)', () => {
     expect(scaleBarLengthMeters(50)).toBe(2)
   })
 
-  it('1:100 → 5 m (5*1000/100 = 50 mm)', () => {
+  it('1:100 → 5 m (5×1000/100 = 50 mm)', () => {
     expect(scaleBarLengthMeters(100)).toBe(5)
   })
 
-  it('1:200 → 10 m (10*1000/200 = 50 mm)', () => {
+  it('1:200 → 10 m (10×1000/200 = 50 mm)', () => {
     expect(scaleBarLengthMeters(200)).toBe(10)
   })
 
-  it('1:500 → 20 m (20*1000/500 = 40 mm)', () => {
+  it('1:500 → 20 m (20×1000/500 = 40 mm)', () => {
     expect(scaleBarLengthMeters(500)).toBe(20)
   })
 
-  it('1:1000 → 50 m (50*1000/1000 = 50 mm)', () => {
+  it('1:1000 → 50 m (50×1000/1000 = 50 mm)', () => {
     expect(scaleBarLengthMeters(1000)).toBe(50)
   })
 
   it('result is always from the candidate list', () => {
-    const candidates = [1, 2, 5, 10, 20, 50]
+    const candidates = [0.5, 1, 2, 5, 10, 20, 50]
     for (const scale of STANDARD_SCALES) {
       expect(candidates).toContain(scaleBarLengthMeters(scale))
     }
   })
 
   it('bar drawn length equals labelled metres at the chosen scale (to within rounding)', () => {
-    // scaleBarLengthMeters(scale) * (1000/scale) mm should be > 0 and match the label
     for (const scale of STANDARD_SCALES) {
       const l = scaleBarLengthMeters(scale)
       const mm = (l * 1000) / scale
       expect(mm).toBeGreaterThan(0)
-      // For most scales, it lands in 40–60 mm or is the only viable option
       if (scale <= 500) {
         expect(mm).toBeGreaterThanOrEqual(20)
       }

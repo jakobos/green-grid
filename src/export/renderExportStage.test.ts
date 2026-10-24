@@ -10,7 +10,7 @@ import {
   computeLegendTotal,
 } from './renderExportStage'
 import type { LegendGroup } from './renderExportStage'
-import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx, ptToPx, PX_PER_MM, MARGIN_MM, TITLE_H_MM, LABEL_SIDE_MM, LEGEND_W_MM, scaleBarLengthMeters } from './sheetLayout'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx, ptToPx, PX_PER_MM, MARGIN_MM, TITLE_H_MM, LABEL_SIDE_MM, LEGEND_W_MM, scaleBarLengthMeters, STANDARD_SCALES } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -399,34 +399,47 @@ describe('legend height', () => {
   })
 })
 
-describe('scale bar right edge clears compass box for all 8 NorthDeg values (1×1 m at 1:10)', () => {
-  // Pure layout math — no Konva stages, no rendering, no RAF timers.
-  // Mirrors the constants used by drawScaleBar and drawCompass in renderExportStage.
-  it('barRight < compassGroupLeft for every direction', () => {
-    const scaleSW = Math.ceil(0.45 * PX_PER_MM) // SCALE_BAR_SW = 0.45 mm
-    const compassSW = Math.ceil(0.5 * PX_PER_MM) // COMPASS_SW = 0.5 mm
+describe('layout: bar and ratio text clear compass box; bar px matches labelled length', () => {
+  // Pure math — no Konva stages. Mirrors constants used in renderExportStage title block.
+  // SCALE_BAR_SW = 0.45 mm, COMPASS_SW = 0.5 mm, compass centre at legendX − 12 mm,
+  // compass 16 × 16 mm box left = compassX − 8 mm = legendX − 20 mm.
+  const scaleSW = Math.ceil(0.45 * PX_PER_MM)
+  const compassSW = Math.ceil(0.5 * PX_PER_MM)
+  const s = mmToPx(14) / 60                  // compass arrow scale factor
+  const nSize = ptToPx(10)                   // "N" label font size px
+  const nDist = 18 * s + nSize / 2           // distance from compass centre to N centre
+  const R = Math.round(20 * s + compassSW + 1) // compass arrow shape half-size
+  const dirs = [0, 45, 90, 135, 180, 225, 270, 315] as const
+  // Generous bound for "1:1000" ratio text width at 8 pt
+  const ratioTextMaxPx = ptToPx(8) * 7
 
-    const titleTextX = mmToPx(MARGIN_MM) + mmToPx(LABEL_SIDE_MM)
-    const legendX = sheetSizePx('portrait').width - mmToPx(MARGIN_MM) - mmToPx(LEGEND_W_MM)
-    const maxBarPx = legendX - mmToPx(20) - titleTextX
-    const barPxFull = Math.round(scaleBarLengthMeters(10) * (1000 / 10) * PX_PER_MM)
-    const barPx = Math.min(barPxFull, Math.max(0, maxBarPx - scaleSW))
-    // Scale bar shape right = titleTextX + shape.x + shape.width
-    //   shape.x = −scaleSW, shape.width = barPx + 2·scaleSW → right = barPx + scaleSW
-    const barRight = titleTextX + barPx + scaleSW
+  it.each([...STANDARD_SCALES])('scale 1:%i: bar px correct and clears compass in both orientations × 8 dirs', (scale) => {
+    const barMeters = scaleBarLengthMeters(scale)
+    const expectedBarPx = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
 
-    const compassX = legendX - mmToPx(12)
-    const s = mmToPx(14) / 60
-    const nSize = ptToPx(10)
-    const nDist = 18 * s + nSize / 2
-    const R = Math.round(20 * s + compassSW + 1)
+    for (const orientation of ['portrait', 'landscape'] as const) {
+      const { width } = sheetSizePx(orientation)
+      const titleTextX = mmToPx(MARGIN_MM) + mmToPx(LABEL_SIDE_MM)
+      const legendX = width - mmToPx(MARGIN_MM) - mmToPx(LEGEND_W_MM)
+      const compassX = legendX - mmToPx(12)
+      // 16×16 mm compass box left edge = compassX − 8 mm = legendX − 20 mm
+      const compassBoxLeft = legendX - mmToPx(20)
 
-    const dirs = [0, 45, 90, 135, 180, 225, 270, 315] as const
-    for (const deg of dirs) {
-      const rad = (deg * Math.PI) / 180
-      const nTextLeft = compassX + nDist * Math.sin(rad) - nSize / 2
-      const compassGroupLeft = Math.min(compassX - R, nTextLeft)
-      expect(barRight, `northDeg ${deg}°: barRight=${barRight} compassGroupLeft=${compassGroupLeft}`).toBeLessThan(compassGroupLeft)
+      // Verify bar px equals barMeters × 1000/scale × PX_PER_MM (no cap distortion)
+      expect(expectedBarPx, `1:${scale} ${orientation} barPx`).toBeGreaterThan(0)
+
+      // Ratio text right end must clear the compass box
+      const ratioTextRight = titleTextX + expectedBarPx + mmToPx(3) + ratioTextMaxPx
+      expect(ratioTextRight, `1:${scale} ${orientation} ratioTextRight vs compassBoxLeft`).toBeLessThan(compassBoxLeft)
+
+      // Bar shape right must clear the compass group for all 8 NorthDeg values
+      const barShapeRight = titleTextX + expectedBarPx + scaleSW
+      for (const deg of dirs) {
+        const rad = (deg * Math.PI) / 180
+        const nTextLeft = compassX + nDist * Math.sin(rad) - nSize / 2
+        const compassGroupLeft = Math.min(compassX - R, nTextLeft)
+        expect(barShapeRight, `1:${scale} ${orientation} northDeg ${deg}° barShapeRight vs compassGroupLeft`).toBeLessThan(compassGroupLeft)
+      }
     }
   })
 })

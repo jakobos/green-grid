@@ -355,13 +355,11 @@ function drawCompass(layer: Konva.Layer, x: number, y: number, northDeg: NorthDe
  * labelled with the same metre count so both agree to within rounding.
  * Uses a fixed seed (independent of garden) for determinism.
  */
-function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number, maxBarPx?: number): void {
+function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number): void {
   const barMeters = scaleBarLengthMeters(scale)
+  const barPx = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
   const tickH = mmToPx(1.5)
   const sw = Math.ceil(SCALE_BAR_SW)
-  // Shape right edge is barPx + sw; cap so shape right ≤ group.x + maxBarPx.
-  const barPxFull = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
-  const barPx = maxBarPx !== undefined ? Math.min(barPxFull, Math.max(0, maxBarPx - sw)) : barPxFull
 
   const gen = rough.generator()
   const seed = seedHash('scale-bar')
@@ -733,7 +731,7 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
       name: 'dimensions',
     }),
   )
-  drawScaleBar(content, titleTextX, yBar, scale, legendX - mmToPx(20) - titleTextX)
+  drawScaleBar(content, titleTextX, yBar, scale)
   drawCompass(content, legendX - mmToPx(12), margin + mmToPx(11), garden.northDeg, garden.id)
 
   // Garden layer — (0,0) is the garden's top-left corner in paper pixels ────

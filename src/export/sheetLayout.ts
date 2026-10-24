@@ -145,10 +145,10 @@ export function labelStepMeters(scale: number, gridStep: number): number {
 
 // ── Scale bar ─────────────────────────────────────────────────────────────────
 
-const SCALE_BAR_CANDIDATES = [1, 2, 5, 10, 20, 50] as const
+const SCALE_BAR_CANDIDATES = [0.5, 1, 2, 5, 10, 20, 50] as const
 
 /**
- * Scale bar length in metres. Prefers the first candidate from {1,2,5,10,20,50}
+ * Scale bar length in metres. Prefers the first candidate from {0.5,1,2,5,10,20,50}
  * that falls in the 40–60 mm target range at the given scale denominator.
  * Falls back to the candidate nearest 50 mm when none lands in range.
  */
