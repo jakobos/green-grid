@@ -57,6 +57,8 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - 2026-10-23 · Stroke widths, wobble and text sizes are set in paper units, independent of garden size · a 3 m bed and a 100 m plot print with the same line weight
 - 2026-10-24 · Seven symbols: tree, shrub, bed, bulb, groundcover, herb, vegetable; strawberry counts as groundcover, carrot as vegetable · covers the 15 catalog entries without one-off symbols; E04 extends the union when the catalog grows
 - 2026-10-24 · Symbols have a minimum drawn size on paper, centred on the item · a 0.2 m bulb at 1:1000 would otherwise be 0.2 mm
+- 2026-10-24 · Export lettering uses Patrick Hand via `@fontsource/patrick-hand` (OFL-1.1), loaded before the stage is built · legible handwriting at 8 pt, self-hosted for offline use
+- 2026-10-24 · Markers are 4 mm circles, centred on items drawn at least 8 mm across and at the top-right corner of smaller ones; same-number markers within 6 mm collapse to one · a marker never hides a small symbol; dense beds stay readable
 
 ## Roadmap
 
