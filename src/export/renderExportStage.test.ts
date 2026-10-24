@@ -6,8 +6,11 @@ import {
   renderExportStage,
   buildLegendGroups,
   buildMarkerNumbers,
+  formatEuro,
+  computeLegendTotal,
 } from './renderExportStage'
-import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx } from './sheetLayout'
+import type { LegendGroup } from './renderExportStage'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx, MARGIN_MM, TITLE_H_MM } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -293,6 +296,105 @@ describe('seeded geometry', () => {
       expect(h).toBeGreaterThanOrEqual(0)
       expect(Number.isInteger(h)).toBe(true)
     }
+  })
+})
+
+describe('formatEuro', () => {
+  it('formats zero', () => { expect(formatEuro(0)).toBe('€0.00') })
+  it('formats a fractional amount with one decimal digit', () => { expect(formatEuro(0.4)).toBe('€0.40') })
+  it('formats thousands with a comma', () => { expect(formatEuro(1215)).toBe('€1,215.00') })
+  it('formats multiple thousands and a half cent rounds correctly', () => {
+    expect(formatEuro(12345.5)).toBe('€12,345.50')
+  })
+})
+
+describe('computeLegendTotal', () => {
+  it('sums qty × estimatedCostEur for the 12-tulip/3-apple example', () => {
+    // 12 tulips × €0.50 = €6.00, 3 apple trees × €35.00 = €105.00 → total €111.00
+    const garden: Garden = {
+      ...baseGarden,
+      items: [
+        ...Array.from({ length: 12 }, (_, i) => item(`t${i}`, 'bulb-tulip')),
+        ...Array.from({ length: 3 }, (_, i) => item(`a${i}`, 'tree-apple')),
+      ],
+    }
+    const groups = buildLegendGroups(garden, CATALOG)
+    expect(computeLegendTotal(groups)).toBeCloseTo(111, 10)
+    expect(formatEuro(computeLegendTotal(groups))).toBe('€111.00')
+  })
+
+  it('returns 0 for empty groups', () => {
+    expect(computeLegendTotal([])).toBe(0)
+  })
+})
+
+describe('legend content rendering', () => {
+  it('shows ×N and cost per row, and an Estimated total', () => {
+    const garden: Garden = {
+      ...baseGarden,
+      items: [
+        item('t1', 'bulb-tulip'),
+        item('t2', 'bulb-tulip'),
+        item('a1', 'tree-apple'),
+      ],
+    }
+    const stage = renderExportStage(garden, CATALOG)
+    const qtys = stage.find<Konva.Text>('.legend-qty').map((t) => t.text())
+    const costs = stage.find<Konva.Text>('.legend-cost').map((t) => t.text())
+    const totalLabel = stage.find<Konva.Text>('.legend-total-label').map((t) => t.text())
+    const totalCost = stage.find<Konva.Text>('.legend-total-cost').map((t) => t.text())
+    expect(qtys).toContain('×2')    // 2 tulips
+    expect(qtys).toContain('×1')    // 1 apple tree
+    expect(costs).toContain('€1.00')   // 2 × €0.50
+    expect(costs).toContain('€35.00')  // 1 × €35.00
+    expect(totalLabel).toEqual(['Estimated total'])
+    expect(totalCost).toEqual(['€36.00'])
+    stage.destroy()
+  })
+})
+
+describe('legend height', () => {
+  // Compute total legend height in px using the same constants as drawLegend.
+  function legendH(groups: LegendGroup[]): number {
+    const ROW_H = mmToPx(6)
+    const HEADING_H = mmToPx(5)
+    const GROUP_GAP = mmToPx(4)
+    const TITLE_H = mmToPx(8)
+    const RULE_AND_GAP = mmToPx(2)
+    const TOTAL_ROW_H = mmToPx(6)
+    let h = TITLE_H
+    for (const g of groups) h += HEADING_H + g.entries.length * ROW_H + GROUP_GAP
+    h += RULE_AND_GAP + TOTAL_ROW_H
+    return h
+  }
+
+  function allTypesGarden(widthMeters: number, heightMeters: number): Garden {
+    return {
+      ...baseGarden,
+      widthMeters,
+      heightMeters,
+      items: CATALOG.map((c, i) => item(String(i), c.catalogId)),
+    }
+  }
+
+  it('15-type landscape legend fits above the bottom margin', () => {
+    const garden = allTypesGarden(25, 5) // landscape: chooseOrientation → landscape
+    const groups = buildLegendGroups(garden, CATALOG)
+    expect(groups.flatMap((g) => g.entries)).toHaveLength(15)
+    // available legend height for landscape: 210 mm − top margin − title − bottom margin
+    const availH_mm = 210 - MARGIN_MM - TITLE_H_MM - MARGIN_MM
+    const availH_px = mmToPx(availH_mm)
+    expect(legendH(groups)).toBeLessThan(availH_px)
+  })
+
+  it('15-type portrait legend fits above the bottom margin', () => {
+    const garden = allTypesGarden(5, 25) // portrait: chooseOrientation → portrait
+    const groups = buildLegendGroups(garden, CATALOG)
+    expect(groups.flatMap((g) => g.entries)).toHaveLength(15)
+    // available legend height for portrait: 297 mm − top margin − title − bottom margin
+    const availH_mm = 297 - MARGIN_MM - TITLE_H_MM - MARGIN_MM
+    const availH_px = mmToPx(availH_mm)
+    expect(legendH(groups)).toBeLessThan(availH_px)
   })
 })
 

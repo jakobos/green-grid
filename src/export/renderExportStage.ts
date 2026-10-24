@@ -40,14 +40,19 @@ const MARKER_R_PX = mmToPx(2)           // 4 mm circle → 2 mm radius
 const MARKER_THRESHOLD_PX = mmToPx(8)   // centre on item when drawn symbol ≥ 8 mm
 const MARKER_DEDUPE_PX = mmToPx(6)      // collapse same-number markers within 6 mm
 
-type LegendGroup = { layer: number; entries: CatalogItem[] }
+export type LegendEntry = { catalogItem: CatalogItem; qty: number }
+export type LegendGroup = { layer: number; entries: LegendEntry[] }
 
 export function buildLegendGroups(garden: Garden, catalog: CatalogItem[]): LegendGroup[] {
-  const placedIds = new Set(garden.items.map((item) => item.catalogId))
-  const byLayer = new Map<number, CatalogItem[]>()
+  const qtys = new Map<string, number>()
+  for (const gItem of garden.items) {
+    qtys.set(gItem.catalogId, (qtys.get(gItem.catalogId) ?? 0) + 1)
+  }
+  const byLayer = new Map<number, LegendEntry[]>()
   for (const entry of catalog) {
-    if (!placedIds.has(entry.catalogId)) continue
-    byLayer.set(entry.layer, [...(byLayer.get(entry.layer) ?? []), entry])
+    const qty = qtys.get(entry.catalogId)
+    if (!qty) continue
+    byLayer.set(entry.layer, [...(byLayer.get(entry.layer) ?? []), { catalogItem: entry, qty }])
   }
   return [...byLayer.entries()]
     .sort(([a], [b]) => a - b)
@@ -60,10 +65,34 @@ export function buildMarkerNumbers(groups: LegendGroup[]): Map<string, number> {
   let n = 1
   for (const group of groups) {
     for (const entry of group.entries) {
-      map.set(entry.catalogId, n++)
+      map.set(entry.catalogItem.catalogId, n++)
     }
   }
   return map
+}
+
+/**
+ * Format a monetary amount in euros with two decimals and thousands commas.
+ * Hand-rolled to avoid Intl/toLocaleString locale dependence.
+ * Examples: 0 → '€0.00', 0.4 → '€0.40', 1215 → '€1,215.00', 12345.5 → '€12,345.50'
+ */
+export function formatEuro(amount: number): string {
+  const cents = Math.round(amount * 100)
+  const eurosInt = Math.floor(cents / 100)
+  const dec = String(cents % 100).padStart(2, '0')
+  const eurosStr = String(eurosInt).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `€${eurosStr}.${dec}`
+}
+
+/** Sum of qty × estimatedCostEur across all legend entries. */
+export function computeLegendTotal(groups: LegendGroup[]): number {
+  let total = 0
+  for (const group of groups) {
+    for (const entry of group.entries) {
+      total += entry.qty * entry.catalogItem.estimatedCostEur
+    }
+  }
+  return total
 }
 
 // ── Drawing helpers ────────────────────────────────────────────────────────────
@@ -425,15 +454,22 @@ function drawLegend(
 ): void {
   if (groups.length === 0) return
 
-  const rowH = mmToPx(7)
-  const headingH = mmToPx(6)
+  const rowH = mmToPx(6)       // tightened from 7 mm to fit 15 types + total row
+  const headingH = mmToPx(5)   // tightened from 6 mm
   const groupGap = mmToPx(4)
   const titleH = mmToPx(8)
   const swatchSz = mmToPx(4)
   const markerD = MARKER_R_PX * 2
   const itemGap = mmToPx(2)
   const swatchOffX = markerD + itemGap
-  const nameOffX = markerD + itemGap + swatchSz + itemGap
+  const nameOffX = markerD + itemGap + swatchSz + itemGap  // 12 mm from content left
+  const contentW = mmToPx(LEGEND_W_MM - LEGEND_CONTENT_GAP_MM)  // 52 mm
+  // Right-aligned columns: cost 11 mm, qty 7 mm, name gets the rest (22 mm).
+  const costW = mmToPx(11)
+  const qtyW = mmToPx(7)
+  const nameW = contentW - nameOffX - qtyW - costW
+  const costX = x + contentW - costW
+  const qtyX = costX - qtyW
 
   layer.add(
     new Konva.Text({
@@ -461,10 +497,11 @@ function drawLegend(
       }),
     )
     cursor += headingH
-    for (const entry of group.entries) {
+    for (const { catalogItem: entry, qty } of group.entries) {
       const num = markerNumbers.get(entry.catalogId) ?? 0
       const rowMidY = cursor + swatchSz / 2
       drawCircledNumber(layer, x + MARKER_R_PX, rowMidY, num, seedHash(entry.catalogId + ':num'), 'legend-marker')
+      const rowCost = qty * entry.estimatedCostEur
       layer.add(
         new Konva.Shape({
           x: x + swatchOffX,
@@ -489,17 +526,91 @@ function drawLegend(
         new Konva.Text({
           x: x + nameOffX,
           y: cursor,
+          width: nameW,
+          wrap: 'none',
           text: entry.name,
           fontSize: ptToPx(9),
           fontFamily: FONT,
           fill: INK,
           name: 'legend-label',
         }),
+        new Konva.Text({
+          x: qtyX,
+          y: cursor,
+          width: qtyW,
+          align: 'right',
+          text: `×${qty}`,
+          fontSize: ptToPx(9),
+          fontFamily: FONT,
+          fill: INK,
+          name: 'legend-qty',
+        }),
+        new Konva.Text({
+          x: costX,
+          y: cursor,
+          width: costW,
+          align: 'right',
+          text: formatEuro(rowCost),
+          fontSize: ptToPx(9),
+          fontFamily: FONT,
+          fill: INK,
+          name: 'legend-cost',
+        }),
       )
       cursor += rowH
     }
     cursor += groupGap
   }
+
+  // Thin rough rule, then bold "Estimated total" row
+  const ruleY = cursor
+  layer.add(
+    new Konva.Shape({
+      x,
+      y: ruleY,
+      width: contentW,
+      height: mmToPx(2),
+      name: 'legend-rule',
+      sceneFunc(ctx) {
+        const rc = rough.canvas(ctx.canvas._canvas)
+        const gen = rough.generator()
+        rc.draw(
+          gen.line(0, 0, contentW, 0, {
+            roughness: 0.4,
+            stroke: INK,
+            strokeWidth: 0.5 * PX_PER_MM,
+            seed: seedHash('legend:total-rule'),
+          }),
+        )
+      },
+    }),
+  )
+  cursor += mmToPx(2)
+  const total = computeLegendTotal(groups)
+  layer.add(
+    new Konva.Text({
+      x,
+      y: cursor,
+      text: 'Estimated total',
+      fontSize: ptToPx(9),
+      fontStyle: 'bold',
+      fontFamily: FONT,
+      fill: INK,
+      name: 'legend-total-label',
+    }),
+    new Konva.Text({
+      x: costX,
+      y: cursor,
+      width: costW,
+      align: 'right',
+      text: formatEuro(total),
+      fontSize: ptToPx(9),
+      fontStyle: 'bold',
+      fontFamily: FONT,
+      fill: INK,
+      name: 'legend-total-cost',
+    }),
+  )
 }
 
 // ── Main export renderer ───────────────────────────────────────────────────────
