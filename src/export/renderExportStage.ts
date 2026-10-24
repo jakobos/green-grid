@@ -4,28 +4,52 @@ import type { Drawable } from 'roughjs/bin/core'
 import type { RoughGenerator } from 'roughjs/bin/generator'
 import type { CatalogItem, Garden, GardenItem } from '@/types/garden'
 import { LAYER_NAMES } from '@/data/catalog'
-import { PIXELS_PER_METER } from '@/components/Grid'
 import { seedHash } from './seedHash'
+import {
+  PX_PER_MM,
+  mmToPx,
+  ptToPx,
+  sheetSizePx,
+  mapAreaMm,
+  pickScale,
+  chooseOrientation,
+  gridStepMeters,
+  labelStepMeters,
+  scaleBarLengthMeters,
+  MARGIN_MM,
+  TITLE_H_MM,
+  LABEL_SIDE_MM,
+  LABEL_TOP_MM,
+  LEGEND_W_MM,
+  LEGEND_CONTENT_GAP_MM,
+} from './sheetLayout'
 import { PAPER, INK, INK_MUTED, GRID_STROKE, BOUNDARY_STROKE } from './exportPalette'
 
-export const EXPORT_PIXEL_RATIO = 2.5
-export const EXPORT_LABEL_MARGIN = 40
-export const EXPORT_TITLE_HEIGHT = 100
-export const EXPORT_LEGEND_WIDTH = 240
+// ── Paper-unit stroke widths ───────────────────────────────────────────────────
+// All values are in paper pixels (= mm × PX_PER_MM) so they are independent of
+// garden size: a 3 m bed and a 100 m plot print with identical line weights.
+const GRID_SW = 0.1 * PX_PER_MM       // fine grid lines: 0.1 mm
+const BOUNDARY_SW = 0.45 * PX_PER_MM  // garden boundary: 0.45 mm
+const ITEM_SW = 0.3 * PX_PER_MM       // item outlines: 0.3 mm
+const COMPASS_SW = 0.5 * PX_PER_MM    // compass strokes: 0.5 mm
+const SCALE_BAR_SW = 0.45 * PX_PER_MM // scale bar: same weight as boundary
+// Hachure line gap: 2 mm in paper pixels
+const HACHURE_GAP = 2.0 * PX_PER_MM
 
-const PAGE_PADDING = 24
-const LEGEND_ROW_HEIGHT = 22
-const LEGEND_HEADING_HEIGHT = 22
-const LEGEND_GROUP_GAP = 16
-const LEGEND_TITLE_HEIGHT = 36
 const FONT = 'sans-serif'
 
 type LegendGroup = { layer: number; entries: CatalogItem[] }
 
+// ── Exported test seams ────────────────────────────────────────────────────────
+
 /**
  * Build the roughjs Drawable for one item's body.
  * Exported so tests can verify determinism (same seed → identical sets)
- * without touching canvas.  Never calls Math.random.
+ * without touching canvas. Never calls Math.random.
+ *
+ * wPx / hPx are in paper pixels (item metres × pxPerMeter).
+ * Stroke width and hachure gap are fixed paper-unit constants, independent of
+ * garden or item size — C010 re-expresses the values C007 tuned at 60 px/m.
  */
 export function buildItemDrawable(
   gen: RoughGenerator,
@@ -33,16 +57,16 @@ export function buildItemDrawable(
   wPx: number,
   hPx: number,
   color: string,
-  seed: number
+  seed: number,
 ): Drawable {
   const opts = {
     seed,
     roughness: 1.2,
     stroke: INK,
-    strokeWidth: 1.5,
+    strokeWidth: ITEM_SW,
     fill: color,
     fillStyle: 'hachure' as const,
-    hachureGap: 8,
+    hachureGap: HACHURE_GAP,
   }
   return shape === 'circle'
     ? gen.ellipse(wPx / 2, hPx / 2, Math.min(wPx, hPx), Math.min(wPx, hPx), opts)
@@ -61,60 +85,50 @@ export function buildLegendGroups(garden: Garden, catalog: CatalogItem[]): Legen
     .map(([layer, entries]) => ({ layer, entries }))
 }
 
-function legendHeight(groups: LegendGroup[]): number {
-  if (groups.length === 0) return 0
-  return (
-    LEGEND_TITLE_HEIGHT +
-    groups.reduce(
-      (sum, g) => sum + LEGEND_HEADING_HEIGHT + g.entries.length * LEGEND_ROW_HEIGHT + LEGEND_GROUP_GAP,
-      0
-    )
-  )
-}
+// ── Drawing helpers ────────────────────────────────────────────────────────────
 
 /**
- * Draw rough grid lines and a stronger rough boundary for the garden area.
- * All seeds are derived from gardenId + position so the same garden always
- * produces the same strokes; no Math.random is used.
+ * Draw rough grid lines (every `step` metres) and a stronger rough boundary.
+ * Seeds: gardenId + metre position → same garden always reproduces the same strokes.
  */
 function drawGrid(
   layer: Konva.Layer,
   gardenId: string,
   widthMeters: number,
-  heightMeters: number
+  heightMeters: number,
+  pxPerMeter: number,
+  gridStep: number,
 ): void {
   const gen = rough.generator()
-  const w = widthMeters * PIXELS_PER_METER
-  const h = heightMeters * PIXELS_PER_METER
+  const w = widthMeters * pxPerMeter
+  const h = heightMeters * pxPerMeter
 
   const gridDrawables: Drawable[] = []
-  for (let col = 0; col <= widthMeters; col++) {
-    const x = col * PIXELS_PER_METER
+  for (let col = 0; col <= widthMeters; col += gridStep) {
     gridDrawables.push(
-      gen.line(x, 0, x, h, {
+      gen.line(col * pxPerMeter, 0, col * pxPerMeter, h, {
         seed: seedHash(`${gardenId}:gv:${col}`),
         roughness: 0.4,
-        strokeWidth: 0.5,
+        strokeWidth: GRID_SW,
         stroke: GRID_STROKE,
-      })
+      }),
     )
   }
-  for (let row = 0; row <= heightMeters; row++) {
-    const y = row * PIXELS_PER_METER
+  for (let row = 0; row <= heightMeters; row += gridStep) {
     gridDrawables.push(
-      gen.line(0, y, w, y, {
+      gen.line(0, row * pxPerMeter, w, row * pxPerMeter, {
         seed: seedHash(`${gardenId}:gh:${row}`),
         roughness: 0.4,
-        strokeWidth: 0.5,
+        strokeWidth: GRID_SW,
         stroke: GRID_STROKE,
-      })
+      }),
     )
   }
 
   const boundaryDrawable = gen.rectangle(0, 0, w, h, {
     seed: seedHash(`${gardenId}:boundary`),
     roughness: 1.0,
-    strokeWidth: 2,
+    strokeWidth: BOUNDARY_SW,
     stroke: BOUNDARY_STROKE,
   })
 
@@ -125,73 +139,95 @@ function drawGrid(
       width: w,
       height: h,
       sceneFunc(ctx) {
-        // rough.canvas needs the raw HTMLCanvasElement; ctx.canvas is Konva's
-        // wrapper, so we reach through to _canvas which holds the real element.
+        // roughjs requires the raw HTMLCanvasElement; ctx.canvas is Konva's
+        // wrapper, so reach through _canvas for the real element.
         const rc = rough.canvas(ctx.canvas._canvas)
         for (const d of gridDrawables) rc.draw(d)
         rc.draw(boundaryDrawable)
       },
-    })
+    }),
   )
 }
 
+/**
+ * Place numeric metre labels every `labelStep` metres along the top (x-axis)
+ * and left (y-axis) edges. labelStep is a multiple of the grid step so every
+ * label falls on a grid line; the larger spacing keeps labels ≥ 8 mm apart.
+ * Labels are drawn at negative offsets into the gutter reserved by
+ * LABEL_SIDE_MM and LABEL_TOP_MM above and to the left of the garden origin.
+ */
 function drawDimensionLabels(
   layer: Konva.Layer,
   widthMeters: number,
-  heightMeters: number
+  heightMeters: number,
+  pxPerMeter: number,
+  labelStep: number,
 ): void {
-  const step = Math.max(widthMeters, heightMeters) > 40 ? 5 : 1
-  const labelSize = 40
-  for (let col = 0; col <= widthMeters; col += step) {
+  const labelW = mmToPx(10)
+  const labelH = mmToPx(4)
+  const fontSize = ptToPx(8) // ≥ 8 pt minimum per spec
+
+  for (let col = 0; col <= widthMeters; col += labelStep) {
     layer.add(
       new Konva.Text({
-        x: col * PIXELS_PER_METER - labelSize / 2,
-        y: -22,
-        width: labelSize,
+        x: col * pxPerMeter - labelW / 2,
+        y: -mmToPx(6),
+        width: labelW,
+        height: labelH,
         text: String(col),
-        fontSize: 12,
+        fontSize,
         fontFamily: FONT,
         fill: INK_MUTED,
         align: 'center',
-      })
+      }),
     )
   }
-  for (let row = 0; row <= heightMeters; row += step) {
+  for (let row = 0; row <= heightMeters; row += labelStep) {
     layer.add(
       new Konva.Text({
-        x: -labelSize - 6,
-        y: row * PIXELS_PER_METER - 6,
-        width: labelSize,
+        x: -labelW - mmToPx(2),
+        y: row * pxPerMeter - labelH / 2,
+        width: labelW,
         text: String(row),
-        fontSize: 12,
+        fontSize,
         fontFamily: FONT,
         fill: INK_MUTED,
         align: 'right',
-      })
+      }),
     )
   }
 }
 
 /**
  * Draw one placed garden item as a rough hachure-filled shape.
- * The seed comes from item.id; different items always produce different strokes;
- * the same item always produces the same strokes.
+ * Metre coordinates are converted to paper pixels with pxPerMeter.
  */
-function drawItem(layer: Konva.Layer, item: GardenItem, catalogItem: CatalogItem): void {
-  const w = item.widthMeters * PIXELS_PER_METER
-  const h = item.heightMeters * PIXELS_PER_METER
+function drawItem(
+  layer: Konva.Layer,
+  item: GardenItem,
+  catalogItem: CatalogItem,
+  pxPerMeter: number,
+): void {
+  const w = item.widthMeters * pxPerMeter
+  const h = item.heightMeters * pxPerMeter
   const gen = rough.generator()
-  const drawable = buildItemDrawable(gen, catalogItem.shape, w, h, catalogItem.color, seedHash(item.id))
+  const drawable = buildItemDrawable(
+    gen,
+    catalogItem.shape,
+    w,
+    h,
+    catalogItem.color,
+    seedHash(item.id),
+  )
 
   const group = new Konva.Group({
-    x: item.xMeters * PIXELS_PER_METER + w / 2,
-    y: item.yMeters * PIXELS_PER_METER + h / 2,
+    x: item.xMeters * pxPerMeter + w / 2,
+    y: item.yMeters * pxPerMeter + h / 2,
     offsetX: w / 2,
     offsetY: h / 2,
     rotation: item.rotationDeg,
     name: 'garden-item',
   })
-
   group.add(
     new Konva.Shape({
       width: w,
@@ -200,43 +236,48 @@ function drawItem(layer: Konva.Layer, item: GardenItem, catalogItem: CatalogItem
         const rc = rough.canvas(ctx.canvas._canvas)
         rc.draw(drawable)
       },
-    })
-  )
-
-  group.add(
+    }),
     new Konva.Text({
-      y: h / 2 - 6,
+      y: h / 2 - ptToPx(9) / 2,
       width: w,
       text: catalogItem.name,
-      fontSize: 11,
+      fontSize: ptToPx(9),
       fontFamily: FONT,
       fill: INK,
       align: 'center',
-    })
+    }),
   )
-
   layer.add(group)
 }
 
 /**
- * Draw a hand-drawn north compass: rough arrow shaft + solid triangle head,
- * seeded from gardenId.  The "N" label is a plain Konva.Text for legibility.
+ * Draw the hand-drawn north compass: rough arrow shaft + filled triangle head.
+ * The design from C007 is scaled to 14 mm paper height (pxPerMeter-independent).
+ * Arrow and "N" label are centred at (x, y); seed from gardenId.
  */
 function drawCompass(layer: Konva.Layer, x: number, y: number, gardenId: string): void {
+  // Scale old 60px design to 14 mm paper height
+  const shapeH = mmToPx(14)
+  const s = shapeH / 60
+  const halfW = Math.round(7 * s) // arrowhead half-width ≈ 19 px
+  const sw = Math.ceil(COMPASS_SW)
+  // Shape is at group local x = -(halfW+sw); cx is the x centre in shape-local coords
+  const cx = halfW + sw
+
   const gen = rough.generator()
   const seed = seedHash(`${gardenId}:compass`)
-
-  const shaft = gen.line(0, 56, 0, 30, {
+  // All x coords use cx so they resolve to group-local x=0 (centred under "N")
+  const shaft = gen.line(cx, Math.round(56 * s), cx, Math.round(30 * s), {
     seed,
     roughness: 0.8,
-    strokeWidth: 2,
+    strokeWidth: COMPASS_SW,
     stroke: INK,
   })
   const head = gen.polygon(
     [
-      [0, 20],
-      [-7, 32],
-      [7, 32],
+      [cx, Math.round(20 * s)],
+      [cx - halfW, Math.round(32 * s)],
+      [cx + halfW, Math.round(32 * s)],
     ],
     {
       seed: seed + 1,
@@ -244,17 +285,18 @@ function drawCompass(layer: Konva.Layer, x: number, y: number, gardenId: string)
       stroke: INK,
       fill: INK,
       fillStyle: 'solid',
-    }
+    },
   )
 
+  const nSize = ptToPx(10)
   const group = new Konva.Group({ x, y })
   group.add(
     new Konva.Text({
-      x: -10,
+      x: -nSize / 2,
       y: 0,
-      width: 20,
+      width: nSize,
       text: 'N',
-      fontSize: 18,
+      fontSize: nSize,
       fontStyle: 'bold',
       fontFamily: FONT,
       fill: INK,
@@ -262,129 +304,266 @@ function drawCompass(layer: Konva.Layer, x: number, y: number, gardenId: string)
     }),
     new Konva.Shape({
       name: 'compass',
-      width: 20,
-      height: 60,
+      x: -(halfW + sw),
+      y: 0,
+      width: halfW * 2 + sw * 2,
+      height: shapeH + sw,
       sceneFunc(ctx) {
         const rc = rough.canvas(ctx.canvas._canvas)
         rc.draw(shaft)
         rc.draw(head)
       },
-    })
+    }),
+  )
+  layer.add(group)
+}
+
+/**
+ * Draw the scale bar with rough end caps, a metre label, and "1:N" ratio text.
+ * Drawn length = scaleBarLengthMeters(scale) * (1000/scale) * PX_PER_MM px;
+ * labelled with the same metre count so both agree to within rounding.
+ * Uses a fixed seed (independent of garden) for determinism.
+ */
+function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number): void {
+  const barMeters = scaleBarLengthMeters(scale)
+  const barPx = Math.round(barMeters * (1000 / scale) * PX_PER_MM)
+  const tickH = mmToPx(1.5)
+  const sw = Math.ceil(SCALE_BAR_SW)
+
+  const gen = rough.generator()
+  const seed = seedHash('scale-bar')
+  const barLine = gen.line(0, tickH, barPx, tickH, {
+    seed,
+    roughness: 0.6,
+    strokeWidth: SCALE_BAR_SW,
+    stroke: INK,
+  })
+  const leftTick = gen.line(0, 0, 0, tickH * 2, {
+    seed: seed + 1,
+    roughness: 0.5,
+    strokeWidth: SCALE_BAR_SW,
+    stroke: INK,
+  })
+  const rightTick = gen.line(barPx, 0, barPx, tickH * 2, {
+    seed: seed + 2,
+    roughness: 0.5,
+    strokeWidth: SCALE_BAR_SW,
+    stroke: INK,
+  })
+
+  const group = new Konva.Group({ x, y })
+  group.add(
+    new Konva.Shape({
+      name: 'scale-bar',
+      x: -sw,
+      y: 0,
+      width: barPx + sw * 2,
+      height: tickH * 2 + sw,
+      sceneFunc(ctx) {
+        const rc = rough.canvas(ctx.canvas._canvas)
+        rc.draw(barLine)
+        rc.draw(leftTick)
+        rc.draw(rightTick)
+      },
+    }),
+    new Konva.Text({
+      x: 0,
+      y: tickH * 2 + mmToPx(1),
+      width: barPx,
+      text: `${barMeters} m`,
+      fontSize: ptToPx(8),
+      fontFamily: FONT,
+      fill: INK,
+      align: 'center',
+      name: 'scale-bar-label',
+    }),
+    new Konva.Text({
+      x: barPx + mmToPx(3),
+      y: tickH - ptToPx(8) / 2,
+      text: `1:${scale}`,
+      fontSize: ptToPx(8),
+      fontFamily: FONT,
+      fill: INK_MUTED,
+      name: 'scale-ratio',
+    }),
   )
   layer.add(group)
 }
 
 function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: number): void {
   if (groups.length === 0) return
+
+  const rowH = mmToPx(7)
+  const headingH = mmToPx(6)
+  const groupGap = mmToPx(4)
+  const titleH = mmToPx(8)
+  const swatchSz = mmToPx(4)
+
   layer.add(
-    new Konva.Text({ x, y, text: 'Legend', fontSize: 16, fontStyle: 'bold', fontFamily: FONT, fill: INK })
+    new Konva.Text({
+      x,
+      y,
+      text: 'Legend',
+      fontSize: ptToPx(10),
+      fontStyle: 'bold',
+      fontFamily: FONT,
+      fill: INK,
+    }),
   )
-  let cursor = y + LEGEND_TITLE_HEIGHT
+  let cursor = y + titleH
+
   for (const group of groups) {
     layer.add(
       new Konva.Text({
         x,
         y: cursor,
         text: `Layer ${group.layer} — ${LAYER_NAMES[group.layer] ?? ''}`,
-        fontSize: 12,
+        fontSize: ptToPx(8),
         fontStyle: 'bold',
         fontFamily: FONT,
         fill: INK_MUTED,
-      })
+      }),
     )
-    cursor += LEGEND_HEADING_HEIGHT
+    cursor += headingH
     for (const entry of group.entries) {
       layer.add(
         new Konva.Rect({
           x,
           y: cursor,
-          width: 14,
-          height: 14,
+          width: swatchSz,
+          height: swatchSz,
           fill: entry.color,
           opacity: 0.7,
           name: 'legend-swatch',
         }),
         new Konva.Text({
-          x: x + 22,
+          x: x + swatchSz + mmToPx(2),
           y: cursor,
           text: entry.name,
-          fontSize: 13,
+          fontSize: ptToPx(9),
           fontFamily: FONT,
           fill: INK,
           name: 'legend-label',
-        })
+        }),
       )
-      cursor += LEGEND_ROW_HEIGHT
+      cursor += rowH
     }
-    cursor += LEGEND_GROUP_GAP
+    cursor += groupGap
   }
 }
 
+// ── Main export renderer ───────────────────────────────────────────────────────
+
+/**
+ * Build a Konva stage for the complete A4 export sheet at 300 dpi.
+ *
+ * Stage is sized to exactly 2480 × 3508 px (portrait) or 3508 × 2480 px
+ * (landscape) — A4 at 300 dpi. Use pixelRatio 1 in toDataURL; EXPORT_PIXEL_RATIO
+ * is removed because the stage is already the correct pixel size.
+ *
+ * Orientation and scale are chosen to maximise the printed map scale.
+ * All garden coordinates are computed as metres × pxPerMeter (paper pixels).
+ * Stroke widths and font sizes are paper-unit constants independent of garden size.
+ */
 export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva.Stage {
-  const gardenWidthPx = garden.widthMeters * PIXELS_PER_METER
-  const gardenHeightPx = garden.heightMeters * PIXELS_PER_METER
-  const groups = buildLegendGroups(garden, catalog)
+  // ── Sheet & scale ──────────────────────────────────────────────────────────
+  const orientation = chooseOrientation(garden.widthMeters, garden.heightMeters)
+  const { width, height } = sheetSizePx(orientation)
+  const { w: mapAreaW_mm, h: mapAreaH_mm } = mapAreaMm(orientation)
+  const scale = pickScale(garden.widthMeters, garden.heightMeters, mapAreaW_mm, mapAreaH_mm)
+  // Paper pixels per garden metre: (1000/scale) mm/m × PX_PER_MM px/mm
+  const pxPerMeter = (1000 / scale) * PX_PER_MM
 
-  const originX = PAGE_PADDING + EXPORT_LABEL_MARGIN
-  const originY = PAGE_PADDING + EXPORT_TITLE_HEIGHT
-  const legendX = originX + gardenWidthPx + PAGE_PADDING
-  const width =
-    groups.length > 0
-      ? legendX + EXPORT_LEGEND_WIDTH + PAGE_PADDING
-      : originX + gardenWidthPx + PAGE_PADDING + 40
-  const height =
-    Math.max(originY + gardenHeightPx, originY + legendHeight(groups)) + PAGE_PADDING
+  // ── Layout in paper pixels ─────────────────────────────────────────────────
+  const margin = mmToPx(MARGIN_MM)
+  const titleH = mmToPx(TITLE_H_MM)
+  const labelSideW = mmToPx(LABEL_SIDE_MM)
+  const labelTopH = mmToPx(LABEL_TOP_MM)
+  const legendW = mmToPx(LEGEND_W_MM)
 
+  // Map column: from left margin to just before the legend, below the title block
+  const mapColX = margin
+  const mapColY = margin + titleH
+  const mapColW = width - 2 * margin - legendW
+  const mapColH = height - mapColY - margin
+
+  // Garden drawing dimensions in paper pixels
+  const gardenDrawW = garden.widthMeters * pxPerMeter
+  const gardenDrawH = garden.heightMeters * pxPerMeter
+
+  // Available area inside map column after reserving label gutters
+  const gardenAreaW = mapColW - labelSideW
+  const gardenAreaH = mapColH - labelTopH
+
+  // Centre the garden drawing in the available area
+  const gardenX = mapColX + labelSideW + Math.round((gardenAreaW - gardenDrawW) / 2)
+  const gardenY = mapColY + labelTopH + Math.round((gardenAreaH - gardenDrawH) / 2)
+
+  const legendX = width - margin - legendW
+  const gridStep = gridStepMeters(scale)
+  const labelStep = labelStepMeters(scale, gridStep)
+
+  // ── Build stage ────────────────────────────────────────────────────────────
   const stage = new Konva.Stage({ container: document.createElement('div'), width, height })
   const content = new Konva.Layer()
   stage.add(content)
 
-  // Paper background — warm tone, not white
+  // Paper background
   content.add(new Konva.Rect({ x: 0, y: 0, width, height, fill: PAPER, name: 'background' }))
 
-  // Title and dimensions remain plain Konva.Text for legibility
+  // Title block ──────────────────────────────────────────────────────────────
+  // Left side: name + subtitle (dimensions) + scale bar
+  // Right side (near legend): compass
+  const titleTextX = mapColX + labelSideW
+  const titleTextW = legendX - titleTextX - mmToPx(20) // leave 20 mm for the compass
+
+  const yName = margin + mmToPx(3)
+  const yDims = yName + ptToPx(14) + mmToPx(1.5)
+  const yBar = yDims + ptToPx(9) + mmToPx(2)
+
   content.add(
     new Konva.Text({
-      x: originX,
-      y: PAGE_PADDING,
-      width: gardenWidthPx,
+      x: titleTextX,
+      y: yName,
+      width: titleTextW,
       text: garden.name,
-      fontSize: 28,
+      fontSize: ptToPx(14),
       fontStyle: 'bold',
       fontFamily: FONT,
       fill: INK,
-      align: 'center',
       name: 'title',
     }),
     new Konva.Text({
-      x: originX,
-      y: PAGE_PADDING + 36,
-      width: gardenWidthPx,
+      x: titleTextX,
+      y: yDims,
       text: `${garden.widthMeters} m × ${garden.heightMeters} m`,
-      fontSize: 14,
+      fontSize: ptToPx(9),
       fontFamily: FONT,
       fill: INK_MUTED,
-      align: 'center',
       name: 'dimensions',
-    })
+    }),
   )
-  drawCompass(content, width - PAGE_PADDING - 20, PAGE_PADDING, garden.id)
+  drawScaleBar(content, titleTextX, yBar, scale)
+  drawCompass(content, legendX - mmToPx(12), margin + mmToPx(2), garden.id)
 
-  const gardenLayer = new Konva.Layer({ x: originX, y: originY })
+  // Garden layer — (0,0) is the garden's top-left corner in paper pixels ────
+  const gardenLayer = new Konva.Layer({ x: gardenX, y: gardenY })
   stage.add(gardenLayer)
-  drawGrid(gardenLayer, garden.id, garden.widthMeters, garden.heightMeters)
-  drawDimensionLabels(gardenLayer, garden.widthMeters, garden.heightMeters)
+  drawGrid(gardenLayer, garden.id, garden.widthMeters, garden.heightMeters, pxPerMeter, gridStep)
+  drawDimensionLabels(gardenLayer, garden.widthMeters, garden.heightMeters, pxPerMeter, labelStep)
 
   const catalogById = new Map(catalog.map((c) => [c.catalogId, c]))
   const placed = garden.items
     .map((item) => ({ item, catalogItem: catalogById.get(item.catalogId) }))
     .filter(
-      (p): p is { item: GardenItem; catalogItem: CatalogItem } => p.catalogItem !== undefined
+      (p): p is { item: GardenItem; catalogItem: CatalogItem } => p.catalogItem !== undefined,
     )
     .sort((a, b) => a.catalogItem.layer - b.catalogItem.layer)
-  for (const { item, catalogItem } of placed) drawItem(gardenLayer, item, catalogItem)
+  for (const { item, catalogItem } of placed) drawItem(gardenLayer, item, catalogItem, pxPerMeter)
 
-  drawLegend(content, groups, legendX, originY)
+  // Legend ────────────────────────────────────────────────────────────────────
+  const groups = buildLegendGroups(garden, catalog)
+  drawLegend(content, groups, legendX + mmToPx(LEGEND_CONTENT_GAP_MM), mapColY)
 
   stage.draw()
   return stage

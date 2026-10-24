@@ -7,9 +7,8 @@ import {
   renderExportStage,
   buildLegendGroups,
   buildItemDrawable,
-  EXPORT_LABEL_MARGIN,
-  EXPORT_LEGEND_WIDTH,
 } from './renderExportStage'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -55,12 +54,44 @@ function texts(stage: Konva.Stage): string[] {
 }
 
 describe('renderExportStage', () => {
-  it('sizes the stage to fit the garden plus chrome', () => {
+  it('stage is exactly A4 at 300 dpi for the chosen orientation', () => {
+    // 10×8 m → portrait at 1:100
     const stage = renderExportStage(baseGarden, CATALOG)
-    expect(stage.width()).toBeGreaterThan(10 * 60 + EXPORT_LABEL_MARGIN)
-    expect(stage.height()).toBeGreaterThan(8 * 60)
+    const expected = sheetSizePx(chooseOrientation(10, 8))
+    expect(stage.width()).toBe(expected.width)
+    expect(stage.height()).toBe(expected.height)
     stage.destroy()
   })
+
+  it('100×10 m exports landscape; 10×100 m exports portrait', () => {
+    const wide = { ...baseGarden, widthMeters: 100, heightMeters: 10 }
+    const tall = { ...baseGarden, widthMeters: 10, heightMeters: 100 }
+    const wideStage = renderExportStage(wide, CATALOG)
+    const tallStage = renderExportStage(tall, CATALOG)
+    expect(wideStage.width()).toBe(sheetSizePx('landscape').width)
+    expect(wideStage.height()).toBe(sheetSizePx('landscape').height)
+    expect(tallStage.width()).toBe(sheetSizePx('portrait').width)
+    expect(tallStage.height()).toBe(sheetSizePx('portrait').height)
+    wideStage.destroy()
+    tallStage.destroy()
+  })
+
+  it('map scale is from the standard list and the garden fits inside the map area', () => {
+    const gardens: [number, number][] = [[1, 1], [20, 20], [100, 10], [10, 100], [100, 100]]
+    for (const [w, h] of gardens) {
+      const garden = { ...baseGarden, widthMeters: w, heightMeters: h }
+      const stage = renderExportStage(garden, CATALOG)
+      // If the stage is landscape, the garden must have benefited from it
+      const orientation = stage.width() > stage.height() ? 'landscape' : 'portrait'
+      const { w: mw, h: mh } = mapAreaMm(orientation)
+      const scale = pickScale(w, h, mw, mh)
+      // Garden fits in map area at that scale (metres × mm/m ≤ map area mm)
+      expect(w * (1000 / scale)).toBeLessThanOrEqual(mw + 0.001)
+      expect(h * (1000 / scale)).toBeLessThanOrEqual(mh + 0.001)
+      stage.destroy()
+    }
+  })
+
 
   it('exports an empty garden with grid, title, compass, dimensions and no legend', () => {
     const stage = renderExportStage(baseGarden, CATALOG)
@@ -111,7 +142,8 @@ describe('renderExportStage', () => {
     expect(labels).toEqual([b.name, a.name])
     expect(stage.find('.legend-swatch')).toHaveLength(2)
     expect(texts(stage)).toContain('Legend')
-    expect(stage.width()).toBeGreaterThanOrEqual(10 * 60 + EXPORT_LEGEND_WIDTH)
+    // Stage is always A4 regardless of legend content
+    expect(stage.width()).toBe(sheetSizePx(chooseOrientation(10, 8)).width)
     stage.destroy()
   })
 
