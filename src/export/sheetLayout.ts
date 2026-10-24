@@ -101,17 +101,38 @@ export function chooseOrientation(gardenW: number, gardenH: number): SheetOrient
 // ── Grid ──────────────────────────────────────────────────────────────────────
 
 /**
- * Grid-line and metre-label step in metres. Smallest of {1, 5, 10} such that
- * adjacent labels are at least 8 mm apart on paper at the given scale denominator.
+ * Grid-line spacing in metres. Smallest of {1, 5, 10} such that adjacent lines
+ * are at least 3 mm apart on paper at the given scale denominator.
  *
- * At denominator N: step metres apart = step * 1000/N mm.
- * Requirement: step * 1000/N ≥ 8 mm.
+ * At denominator N: step metres = step * 1000/N mm on paper.
+ * Rule: step * 1000/N ≥ 3 mm.
+ *
+ * Examples: 1:200 → 1 m (5 mm ≥ 3 mm); 1:500 → 5 m (2 mm < 3 mm, 10 mm ≥ 3 mm).
  */
 export function gridStepMeters(scale: number): number {
-  const mmForStep = (s: number) => (s * 1000) / scale
-  if (mmForStep(1) >= 8) return 1
-  if (mmForStep(5) >= 8) return 5
+  if ((1 * 1000) / scale >= 3) return 1
+  if ((5 * 1000) / scale >= 3) return 5
   return 10
+}
+
+/**
+ * Metre-label spacing in metres. Must be a multiple of `gridStep` and place
+ * adjacent labels at least 8 mm apart on paper at the given scale denominator.
+ *
+ * Tries multiples of gridStep by factors [1, 2, 5, 10, 20, 50] and returns the
+ * first that satisfies the 8 mm rule, giving labels at nice round positions.
+ *
+ * Examples (scale, gridStep → labelStep):
+ *   1:100, 1 → 1   (10 mm)
+ *   1:200, 1 → 2   (10 mm)
+ *   1:500, 5 → 5   (10 mm)
+ *   1:1000, 5 → 10 (10 mm)
+ */
+export function labelStepMeters(scale: number, gridStep: number): number {
+  for (const k of [1, 2, 5, 10, 20, 50]) {
+    if ((gridStep * k * 1000) / scale >= 8) return gridStep * k
+  }
+  return gridStep * 50
 }
 
 // ── Scale bar ─────────────────────────────────────────────────────────────────

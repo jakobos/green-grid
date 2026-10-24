@@ -14,6 +14,7 @@ import {
   pickScale,
   chooseOrientation,
   gridStepMeters,
+  labelStepMeters,
   scaleBarLengthMeters,
   MARGIN_MM,
   TITLE_H_MM,
@@ -95,14 +96,14 @@ function drawGrid(
   widthMeters: number,
   heightMeters: number,
   pxPerMeter: number,
-  step: number,
+  gridStep: number,
 ): void {
   const gen = rough.generator()
   const w = widthMeters * pxPerMeter
   const h = heightMeters * pxPerMeter
 
   const gridDrawables: Drawable[] = []
-  for (let col = 0; col <= widthMeters; col += step) {
+  for (let col = 0; col <= widthMeters; col += gridStep) {
     gridDrawables.push(
       gen.line(col * pxPerMeter, 0, col * pxPerMeter, h, {
         seed: seedHash(`${gardenId}:gv:${col}`),
@@ -112,7 +113,7 @@ function drawGrid(
       }),
     )
   }
-  for (let row = 0; row <= heightMeters; row += step) {
+  for (let row = 0; row <= heightMeters; row += gridStep) {
     gridDrawables.push(
       gen.line(0, row * pxPerMeter, w, row * pxPerMeter, {
         seed: seedHash(`${gardenId}:gh:${row}`),
@@ -148,8 +149,10 @@ function drawGrid(
 }
 
 /**
- * Place numeric metre labels along the top (x-axis) and left (y-axis) edges.
- * Labels are drawn at negative offsets so they land in the gutter reserved by
+ * Place numeric metre labels every `labelStep` metres along the top (x-axis)
+ * and left (y-axis) edges. labelStep is a multiple of the grid step so every
+ * label falls on a grid line; the larger spacing keeps labels ≥ 8 mm apart.
+ * Labels are drawn at negative offsets into the gutter reserved by
  * LABEL_SIDE_MM and LABEL_TOP_MM above and to the left of the garden origin.
  */
 function drawDimensionLabels(
@@ -157,13 +160,13 @@ function drawDimensionLabels(
   widthMeters: number,
   heightMeters: number,
   pxPerMeter: number,
-  step: number,
+  labelStep: number,
 ): void {
   const labelW = mmToPx(10)
   const labelH = mmToPx(4)
   const fontSize = ptToPx(8) // ≥ 8 pt minimum per spec
 
-  for (let col = 0; col <= widthMeters; col += step) {
+  for (let col = 0; col <= widthMeters; col += labelStep) {
     layer.add(
       new Konva.Text({
         x: col * pxPerMeter - labelW / 2,
@@ -178,7 +181,7 @@ function drawDimensionLabels(
       }),
     )
   }
-  for (let row = 0; row <= heightMeters; row += step) {
+  for (let row = 0; row <= heightMeters; row += labelStep) {
     layer.add(
       new Konva.Text({
         x: -labelW - mmToPx(2),
@@ -496,7 +499,8 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
   const gardenY = mapColY + labelTopH + Math.round((gardenAreaH - gardenDrawH) / 2)
 
   const legendX = width - margin - legendW
-  const step = gridStepMeters(scale)
+  const gridStep = gridStepMeters(scale)
+  const labelStep = labelStepMeters(scale, gridStep)
 
   // ── Build stage ────────────────────────────────────────────────────────────
   const stage = new Konva.Stage({ container: document.createElement('div'), width, height })
@@ -544,8 +548,8 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
   // Garden layer — (0,0) is the garden's top-left corner in paper pixels ────
   const gardenLayer = new Konva.Layer({ x: gardenX, y: gardenY })
   stage.add(gardenLayer)
-  drawGrid(gardenLayer, garden.id, garden.widthMeters, garden.heightMeters, pxPerMeter, step)
-  drawDimensionLabels(gardenLayer, garden.widthMeters, garden.heightMeters, pxPerMeter, step)
+  drawGrid(gardenLayer, garden.id, garden.widthMeters, garden.heightMeters, pxPerMeter, gridStep)
+  drawDimensionLabels(gardenLayer, garden.widthMeters, garden.heightMeters, pxPerMeter, labelStep)
 
   const catalogById = new Map(catalog.map((c) => [c.catalogId, c]))
   const placed = garden.items

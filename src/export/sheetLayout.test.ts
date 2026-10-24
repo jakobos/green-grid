@@ -5,6 +5,7 @@ import {
   pickScale,
   chooseOrientation,
   gridStepMeters,
+  labelStepMeters,
   scaleBarLengthMeters,
   STANDARD_SCALES,
 } from './sheetLayout'
@@ -106,36 +107,74 @@ describe('chooseOrientation', () => {
 })
 
 describe('gridStepMeters', () => {
-  it('all standard scales produce labels at least 8 mm apart', () => {
-    for (const scale of STANDARD_SCALES) {
-      const step = gridStepMeters(scale)
-      expect((step * 1000) / scale).toBeGreaterThanOrEqual(8)
-    }
-  })
-
-  it('uses step 1 at 1:50 (1m = 20mm ≥ 8mm)', () => {
-    expect(gridStepMeters(50)).toBe(1)
-  })
-
-  it('uses step 1 at 1:100 (1m = 10mm ≥ 8mm)', () => {
+  it('uses step 1 at 1:100 (1m = 10mm ≥ 3mm)', () => {
     expect(gridStepMeters(100)).toBe(1)
   })
 
-  it('uses step 5 at 1:200 (1m = 5mm < 8mm; 5m = 25mm ≥ 8mm)', () => {
-    expect(gridStepMeters(200)).toBe(5)
+  it('uses step 1 at 1:200 (1m = 5mm ≥ 3mm)', () => {
+    expect(gridStepMeters(200)).toBe(1)
   })
 
-  it('uses step 5 at 1:500 (1m = 2mm; 5m = 10mm ≥ 8mm)', () => {
+  it('uses step 1 at 1:250 (1m = 4mm ≥ 3mm)', () => {
+    expect(gridStepMeters(250)).toBe(1)
+  })
+
+  it('uses step 5 at 1:500 (1m = 2mm < 3mm; 5m = 10mm ≥ 3mm)', () => {
     expect(gridStepMeters(500)).toBe(5)
   })
 
-  it('uses step 10 at 1:1000 (1m=1mm, 5m=5mm; 10m=10mm ≥ 8mm)', () => {
-    expect(gridStepMeters(1000)).toBe(10)
+  it('uses step 5 at 1:1000 (1m = 1mm < 3mm; 5m = 5mm ≥ 3mm)', () => {
+    expect(gridStepMeters(1000)).toBe(5)
+  })
+
+  it('grid lines at all standard scales are at least 3 mm apart', () => {
+    for (const scale of STANDARD_SCALES) {
+      const step = gridStepMeters(scale)
+      expect((step * 1000) / scale).toBeGreaterThanOrEqual(3)
+    }
   })
 
   it('step is always 1, 5, or 10', () => {
     for (const scale of STANDARD_SCALES) {
       expect([1, 5, 10]).toContain(gridStepMeters(scale))
+    }
+  })
+})
+
+describe('labelStepMeters', () => {
+  it('1:100 gridStep=1 → labelStep 1 (10mm ≥ 8mm)', () => {
+    expect(labelStepMeters(100, 1)).toBe(1)
+  })
+
+  it('1:200 gridStep=1 → labelStep 2 (1m=5mm<8mm; 2m=10mm≥8mm)', () => {
+    expect(labelStepMeters(200, 1)).toBe(2)
+  })
+
+  it('1:250 gridStep=1 → labelStep 2 (1m=4mm<8mm; 2m=8mm≥8mm)', () => {
+    expect(labelStepMeters(250, 1)).toBe(2)
+  })
+
+  it('1:500 gridStep=5 → labelStep 5 (5m=10mm≥8mm)', () => {
+    expect(labelStepMeters(500, 5)).toBe(5)
+  })
+
+  it('1:1000 gridStep=5 → labelStep 10 (5m=5mm<8mm; 10m=10mm≥8mm)', () => {
+    expect(labelStepMeters(1000, 5)).toBe(10)
+  })
+
+  it('labelStep is always a multiple of gridStep', () => {
+    for (const scale of STANDARD_SCALES) {
+      const gs = gridStepMeters(scale)
+      const ls = labelStepMeters(scale, gs)
+      expect(ls % gs).toBe(0)
+    }
+  })
+
+  it('labels at all standard scales are at least 8 mm apart', () => {
+    for (const scale of STANDARD_SCALES) {
+      const gs = gridStepMeters(scale)
+      const ls = labelStepMeters(scale, gs)
+      expect((ls * 1000) / scale).toBeGreaterThanOrEqual(8)
     }
   })
 })
