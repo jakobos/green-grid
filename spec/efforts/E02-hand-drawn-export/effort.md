@@ -55,6 +55,8 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - 2026-10-23 · The map uses the largest standard plan scale that fits (1:10 … 1:1000), not an arbitrary fit factor · the printed "1:N" and the scale bar stay true and readable
 - 2026-10-23 · The legend is a fixed-width column on the right in both orientations; the orientation with the larger map scale wins · one layout rule; 15 catalog entries fit one column
 - 2026-10-23 · Stroke widths, wobble and text sizes are set in paper units, independent of garden size · a 3 m bed and a 100 m plot print with the same line weight
+- 2026-10-24 · Seven symbols: tree, shrub, bed, bulb, groundcover, herb, vegetable; strawberry counts as groundcover, carrot as vegetable · covers the 15 catalog entries without one-off symbols; E04 extends the union when the catalog grows
+- 2026-10-24 · Symbols have a minimum drawn size on paper, centred on the item · a 0.2 m bulb at 1:1000 would otherwise be 0.2 mm
 
 ## Roadmap
 
@@ -62,7 +64,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 1. [x] Sketch rendering: seeded roughjs strokes for grid, boundary, items and compass on a paper background — C007
 2. [x] A4 sheet: fixed page with orientation from aspect ratio, fit-to-page map, scale bar, PNG at 300 dpi — C010
 3. [ ] PDF download of the A4 sheet via jspdf — C013 (planned)
-4. [ ] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind
+4. [ ] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind — C014 (planned)
 5. [ ] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend
 6. [ ] Plant list: legend quantities, cost per entry, and a grand total
 7. [ ] North direction: per-garden setting in 45° steps, header control, editor north arrow, export compass follows it
