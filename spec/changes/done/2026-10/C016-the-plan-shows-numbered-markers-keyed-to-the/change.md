@@ -4,6 +4,7 @@ effort: E02
 slice: 5
 depends: [C014]
 opened: 2026-10-24
+closed: 2026-10-24
 ---
 
 # C016 · The plan shows numbered markers keyed to the legend in a bundled handwritten font
