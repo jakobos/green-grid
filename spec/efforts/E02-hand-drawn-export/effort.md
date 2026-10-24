@@ -59,6 +59,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 - 2026-10-24 · Symbols have a minimum drawn size on paper, centred on the item · a 0.2 m bulb at 1:1000 would otherwise be 0.2 mm
 - 2026-10-24 · Export lettering uses Patrick Hand via `@fontsource/patrick-hand` (OFL-1.1), loaded before the stage is built · legible handwriting at 8 pt, self-hosted for offline use
 - 2026-10-24 · Markers are 4 mm circles, centred on items drawn at least 8 mm across and at the top-right corner of smaller ones; same-number markers within 6 mm collapse to one · a marker never hides a small symbol; dense beds stay readable
+- 2026-10-24 · Legend money is euros with two decimals and a comma for thousands (`€1,215.00`), formatted by hand rather than with `Intl` · catalog prices are EUR; locale-dependent formatting would break byte-identical exports
 
 ## Roadmap
 
@@ -68,7 +69,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 3. [x] PDF download of the A4 sheet via jspdf — C013
 4. [x] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind — C014
 5. [x] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend — C016
-6. [ ] Plant list: legend quantities, cost per entry, and a grand total
+6. [ ] Plant list: legend quantities, cost per entry, and a grand total — C017 (planned)
 7. [ ] North direction: per-garden setting in 45° steps, header control, editor north arrow, export compass follows it
 
 ## Risks and open questions
