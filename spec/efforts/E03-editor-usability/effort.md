@@ -47,6 +47,8 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 - 2026-10-23 · Touch and mobile are out of scope for this effort · user request
 - 2026-10-23 · Size snap step is 0.1 m, separate from the 0.5 m position step · user decision; a 0.2 m bulb keeps its size when resized
 - 2026-10-23 · Item label splits the E02 legend key: catalog type plus label · E02 numbers markers per type; varieties need their own line
+- 2026-10-24 · Item `label`/`notes` are optional `GardenItem` fields with no persist `version` bump · absent in old data, so stored gardens stay valid; keeps the bump out of land-time overlap with E02 slice 7
+- 2026-10-24 · The labelled legend entry is its own slice after E02 slices 5 and 6 · those slices rewrite markers and legend; splitting avoids colliding in `src/export/`
 
 ## Roadmap
 
@@ -55,8 +57,9 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 2. [x] Catalog search in the sidebar — C009
 3. [x] Duplicate the selected item — C011
 4. [ ] Resize area items with handles, snapped — C012 (planned)
-5. [ ] Item properties panel: label, width, height, notes
+5. [ ] Item properties panel: label, width, height, notes — C015 (planned)
 6. [ ] Line items: drop, select, move, edit vertices, render in editor and export
+7. [ ] Labelled items get their own legend entry and marker in the export (after E02 slices 5 and 6)
 
 ## Risks and open questions
 
