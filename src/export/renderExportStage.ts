@@ -33,7 +33,12 @@ const BOUNDARY_SW = 0.45 * PX_PER_MM  // garden boundary: 0.45 mm
 const COMPASS_SW = 0.5 * PX_PER_MM    // compass strokes: 0.5 mm
 const SCALE_BAR_SW = 0.45 * PX_PER_MM // scale bar: same weight as boundary
 
-const FONT = 'sans-serif'
+const FONT = 'Patrick Hand'
+
+// ── Marker constants (paper-unit) ─────────────────────────────────────────────
+const MARKER_R_PX = mmToPx(2)           // 4 mm circle → 2 mm radius
+const MARKER_THRESHOLD_PX = mmToPx(8)   // centre on item when drawn symbol ≥ 8 mm
+const MARKER_DEDUPE_PX = mmToPx(6)      // collapse same-number markers within 6 mm
 
 type LegendGroup = { layer: number; entries: CatalogItem[] }
 
@@ -47,6 +52,18 @@ export function buildLegendGroups(garden: Garden, catalog: CatalogItem[]): Legen
   return [...byLayer.entries()]
     .sort(([a], [b]) => a - b)
     .map(([layer, entries]) => ({ layer, entries }))
+}
+
+/** Map catalogId → 1-based marker number, in buildLegendGroups order. */
+export function buildMarkerNumbers(groups: LegendGroup[]): Map<string, number> {
+  const map = new Map<string, number>()
+  let n = 1
+  for (const group of groups) {
+    for (const entry of group.entries) {
+      map.set(entry.catalogId, n++)
+    }
+  }
+  return map
 }
 
 // ── Drawing helpers ────────────────────────────────────────────────────────────
@@ -204,15 +221,6 @@ function drawItem(
         for (const d of drawables) rc.draw(d)
       },
     }),
-    new Konva.Text({
-      y: drawnH / 2 - ptToPx(9) / 2,
-      width: drawnW,
-      text: catalogItem.name,
-      fontSize: ptToPx(9),
-      fontFamily: FONT,
-      fill: INK,
-      align: 'center',
-    }),
   )
   layer.add(group)
 }
@@ -357,7 +365,64 @@ function drawScaleBar(layer: Konva.Layer, x: number, y: number, scale: number): 
   layer.add(group)
 }
 
-function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: number): void {
+/**
+ * Draw a rough ink circle (4 mm diameter) with the marker number centred inside.
+ * cx, cy are the marker centre in the layer's local coordinate space.
+ * The circle has a paper fill so it reads clearly on top of any symbol.
+ */
+function drawCircledNumber(
+  layer: Konva.Layer,
+  cx: number,
+  cy: number,
+  num: number,
+  seed: number,
+  groupName = 'marker',
+): void {
+  const r = MARKER_R_PX
+  const gen = rough.generator()
+  const circle = gen.ellipse(r, r, r * 2, r * 2, {
+    seed,
+    roughness: 0.8,
+    stroke: INK,
+    strokeWidth: 0.3 * PX_PER_MM,
+    fill: PAPER,
+    fillStyle: 'solid',
+  })
+  const group = new Konva.Group({ x: cx - r, y: cy - r, name: groupName })
+  group.add(
+    new Konva.Shape({
+      width: r * 2,
+      height: r * 2,
+      name: 'marker-circle',
+      sceneFunc(ctx) {
+        const rc = rough.canvas(ctx.canvas._canvas)
+        rc.draw(circle)
+      },
+    }),
+    new Konva.Text({
+      x: 0,
+      y: 0,
+      width: r * 2,
+      height: r * 2,
+      text: String(num),
+      fontSize: ptToPx(8),
+      fontFamily: FONT,
+      fill: INK,
+      align: 'center',
+      verticalAlign: 'middle',
+      name: 'marker-label',
+    }),
+  )
+  layer.add(group)
+}
+
+function drawLegend(
+  layer: Konva.Layer,
+  groups: LegendGroup[],
+  markerNumbers: Map<string, number>,
+  x: number,
+  y: number,
+): void {
   if (groups.length === 0) return
 
   const rowH = mmToPx(7)
@@ -365,6 +430,10 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
   const groupGap = mmToPx(4)
   const titleH = mmToPx(8)
   const swatchSz = mmToPx(4)
+  const markerD = MARKER_R_PX * 2
+  const itemGap = mmToPx(2)
+  const swatchOffX = markerD + itemGap
+  const nameOffX = markerD + itemGap + swatchSz + itemGap
 
   layer.add(
     new Konva.Text({
@@ -393,9 +462,12 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
     )
     cursor += headingH
     for (const entry of group.entries) {
+      const num = markerNumbers.get(entry.catalogId) ?? 0
+      const rowMidY = cursor + swatchSz / 2
+      drawCircledNumber(layer, x + MARKER_R_PX, rowMidY, num, seedHash(entry.catalogId + ':num'), 'legend-marker')
       layer.add(
         new Konva.Shape({
-          x,
+          x: x + swatchOffX,
           y: cursor,
           width: swatchSz,
           height: swatchSz,
@@ -415,7 +487,7 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
           },
         }),
         new Konva.Text({
-          x: x + swatchSz + mmToPx(2),
+          x: x + nameOffX,
           y: cursor,
           text: entry.name,
           fontSize: ptToPx(9),
@@ -539,9 +611,43 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
     .sort((a, b) => a.catalogItem.layer - b.catalogItem.layer)
   for (const { item, catalogItem } of placed) drawItem(gardenLayer, item, catalogItem, pxPerMeter)
 
-  // Legend ────────────────────────────────────────────────────────────────────
+  // Legend & marker numbers ──────────────────────────────────────────────────
   const groups = buildLegendGroups(garden, catalog)
-  drawLegend(content, groups, legendX + mmToPx(LEGEND_CONTENT_GAP_MM), mapColY)
+  const markerNumbers = buildMarkerNumbers(groups)
+  drawLegend(content, groups, markerNumbers, legendX + mmToPx(LEGEND_CONTENT_GAP_MM), mapColY)
+
+  // Markers on plan — upright circles in garden order, same-number dedupe ──
+  const drawnMarkers: { num: number; cx: number; cy: number }[] = []
+  for (const gItem of garden.items) {
+    const catalogItem = catalogById.get(gItem.catalogId)
+    if (!catalogItem) continue
+    const num = markerNumbers.get(catalogItem.catalogId)
+    if (num === undefined) continue
+
+    const w = gItem.widthMeters * pxPerMeter
+    const h = gItem.heightMeters * pxPerMeter
+    const drawnW = Math.max(w, MIN_SYMBOL_PX)
+    const drawnH = Math.max(h, MIN_SYMBOL_PX)
+    // Centre of item in gardenLayer coords
+    const itemCx = gItem.xMeters * pxPerMeter + w / 2
+    const itemCy = gItem.yMeters * pxPerMeter + h / 2
+    // If drawn symbol is ≥ 8 mm on both axes: centre on symbol.
+    // Otherwise: push the marker outside the top-right corner by its own
+    // radius plus 0.5 mm so the paper fill never covers the drawn symbol.
+    const isSmall = !(drawnW >= MARKER_THRESHOLD_PX && drawnH >= MARKER_THRESHOLD_PX)
+    const cornerOffsetPx = MARKER_R_PX + mmToPx(0.5)
+    const markerCx = isSmall ? itemCx + drawnW / 2 + cornerOffsetPx : itemCx
+    const markerCy = isSmall ? itemCy - drawnH / 2 - cornerOffsetPx : itemCy
+    // Dedupe: skip if same number already within 6 mm of this position
+    if (
+      drawnMarkers.some(
+        (m) => m.num === num && Math.hypot(m.cx - markerCx, m.cy - markerCy) < MARKER_DEDUPE_PX,
+      )
+    )
+      continue
+    drawnMarkers.push({ num, cx: markerCx, cy: markerCy })
+    drawCircledNumber(gardenLayer, markerCx, markerCy, num, seedHash(`${gItem.id}:marker`), 'plan-marker')
+  }
 
   stage.draw()
   return stage

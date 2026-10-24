@@ -5,8 +5,9 @@ import type { Garden, GardenItem } from '@/types/garden'
 import {
   renderExportStage,
   buildLegendGroups,
+  buildMarkerNumbers,
 } from './renderExportStage'
-import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm } from './sheetLayout'
+import { sheetSizePx, chooseOrientation, pickScale, mapAreaMm, mmToPx } from './sheetLayout'
 import { seedHash } from './seedHash'
 
 // jsdom has no canvas implementation; give Konva a no-op 2D context.
@@ -145,7 +146,7 @@ describe('renderExportStage', () => {
     stage.destroy()
   })
 
-  it('draws every placed item with its rotation, ordered by layer', () => {
+  it('draws every placed item with its rotation, ordered by layer; no name text in item groups', () => {
     const tree = CATALOG.find((c) => c.layer === 5)!
     const bulb = CATALOG.find((c) => c.layer === 1)!
     const garden = { ...baseGarden, items: [item('1', tree.catalogId), item('2', bulb.catalogId)] }
@@ -153,7 +154,116 @@ describe('renderExportStage', () => {
     const groups = stage.find<Konva.Group>('.garden-item')
     expect(groups).toHaveLength(2)
     expect(groups.every((g) => g.rotation() === 90)).toBe(true)
-    expect(groups[0].findOne<Konva.Text>('Text')!.text()).toBe(bulb.name)
+    // No catalog name text inside item groups — markers live outside the rotated group
+    for (const g of groups) {
+      expect(g.find('Text')).toHaveLength(0)
+    }
+    stage.destroy()
+  })
+})
+
+describe('buildMarkerNumbers', () => {
+  it('returns empty map for empty groups', () => {
+    expect(buildMarkerNumbers([])).toEqual(new Map())
+  })
+
+  it('assigns 1-based numbers in layer order then entry order', () => {
+    const layer1 = CATALOG.find((c) => c.layer === 1)!
+    const layer5 = CATALOG.find((c) => c.layer === 5)!
+    const garden = { ...baseGarden, items: [item('a', layer5.catalogId), item('b', layer1.catalogId)] }
+    const groups = buildLegendGroups(garden, CATALOG)
+    const nums = buildMarkerNumbers(groups)
+    // layer 1 comes first → number 1, layer 5 → number 2
+    expect(nums.get(layer1.catalogId)).toBe(1)
+    expect(nums.get(layer5.catalogId)).toBe(2)
+  })
+
+  it('assigns consecutive numbers across multiple layers', () => {
+    const entries = CATALOG.slice(0, 5)
+    // Fake a garden that has all five items
+    const garden = {
+      ...baseGarden,
+      items: entries.map((e, i) => item(String(i), e.catalogId)),
+    }
+    const groups = buildLegendGroups(garden, CATALOG)
+    const nums = buildMarkerNumbers(groups)
+    // All five get distinct 1-based numbers
+    const values = [...nums.values()].sort((a, b) => a - b)
+    expect(values).toEqual([1, 2, 3, 4, 5])
+  })
+})
+
+describe('marker placement', () => {
+  const tulipCatalog = CATALOG.find((c) => c.name.includes('Tulip'))!
+
+  it('renders one marker per unique catalog type (dedupe within 6 mm)', () => {
+    // Two tulips at the same spot — only one marker should be drawn
+    const tinyItem = (id: string): GardenItem => ({
+      id,
+      catalogId: tulipCatalog.catalogId,
+      xMeters: 1,
+      yMeters: 1,
+      widthMeters: 0.2,
+      heightMeters: 0.2,
+      rotationDeg: 0,
+    })
+    const garden = { ...baseGarden, items: [tinyItem('t1'), tinyItem('t2')] }
+    const stage = renderExportStage(garden, CATALOG)
+    // Both items are at same position → dedupe → one marker
+    expect(stage.find('.plan-marker')).toHaveLength(1)
+    stage.destroy()
+  })
+
+  it('renders two markers when same type is > 6 mm apart', () => {
+    // 16×10 m → landscape 1:100; 1 m = 10 mm on paper > 6 mm dedupe threshold
+    const garden = {
+      ...baseGarden,
+      widthMeters: 16,
+      heightMeters: 10,
+      items: [
+        { id: 't1', catalogId: tulipCatalog.catalogId, xMeters: 1, yMeters: 1, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
+        { id: 't2', catalogId: tulipCatalog.catalogId, xMeters: 2, yMeters: 1, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 },
+      ],
+    }
+    const stage = renderExportStage(garden, CATALOG)
+    expect(stage.find('.plan-marker')).toHaveLength(2)
+    stage.destroy()
+  })
+
+  it('places marker clear of the drawn box for items smaller than 8 mm', () => {
+    // 0.2 m tulip at 1:1000 → drawn at MIN_SYMBOL_PX (< 8 mm threshold)
+    // marker centre pushed r + 0.5 mm outside the top-right corner
+    const bigGarden = {
+      ...baseGarden,
+      widthMeters: 100,
+      heightMeters: 100,
+      items: [{ id: 'b1', catalogId: tulipCatalog.catalogId, xMeters: 5, yMeters: 5, widthMeters: 0.2, heightMeters: 0.2, rotationDeg: 0 }],
+    }
+    const stage = renderExportStage(bigGarden, CATALOG)
+    const markers = stage.find<Konva.Group>('.plan-marker')
+    expect(markers).toHaveLength(1)
+    const label = markers[0].findOne<Konva.Text>('.marker-label')
+    expect(label?.text()).toBe('1')
+
+    // Verify marker circle doesn't intersect the drawn box.
+    // Both the plan-marker group and the garden-item group live on gardenLayer,
+    // so their .x()/.y() are directly comparable in gardenLayer coords.
+    const markerGroup = markers[0]
+    const itemGroup = stage.find<Konva.Group>('.garden-item')[0]
+    const MARKER_R_PX = mmToPx(2)
+    // Drawn box: centre at (itemGroup.x(), itemGroup.y()), half-extents = offsetX/offsetY
+    const boxRightEdge = itemGroup.x() + itemGroup.offsetX()   // = itemCx + drawnW/2
+    const boxTopEdge   = itemGroup.y() - itemGroup.offsetY()   // = itemCy − drawnH/2
+    // Marker group top-left is at (markerGroup.x(), markerGroup.y())
+    // Marker circle spans [markerGroup.x() … markerGroup.x() + 2r] horizontally
+    //                 and [markerGroup.y() … markerGroup.y() + 2r] vertically
+    expect(markerGroup.x()).toBeGreaterThan(boxRightEdge)         // left edge > box right
+    expect(markerGroup.y() + MARKER_R_PX * 2).toBeLessThan(boxTopEdge) // bottom < box top
+    // Gap on each axis should be exactly 0.5 mm
+    const GAP_PX = mmToPx(0.5)
+    expect(markerGroup.x() - boxRightEdge).toBeCloseTo(GAP_PX, 0)
+    expect(boxTopEdge - (markerGroup.y() + MARKER_R_PX * 2)).toBeCloseTo(GAP_PX, 0)
+
     stage.destroy()
   })
 })
