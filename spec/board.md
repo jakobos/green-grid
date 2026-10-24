@@ -12,8 +12,8 @@
 <!-- Yours: what the coordinator means to open or spawn next, and why. -->
 
 - Orchestration (user decision 2026-10-23): E02 and E03 run in parallel, each under its own coordinator session in Herdr; the orchestrator (pane `orch`) is the only one who runs `guild land`, after checks and a playwright-cli acceptance pass, and reports each landing to the human.
-- E02 hand-drawn-export: active; coordinator `coord-e02`. C007 (slice 1, seeded roughjs sketch rendering) first.
-- E03 editor-usability: active in parallel; coordinator `coord-e03` runs slices 1–5. Slice 6 (line items) waits until E02 slices 1 and 4 land, because it draws lines in the E02 export style.
+- E02 hand-drawn-export: active; coordinator `coord-e02`. Slices 1–4 landed; slice 5 (lettering and markers) next, and it must stop item labels wrapping to tiny item widths (orch C014 pass 2026-10-24).
+- E03 editor-usability: active in parallel; coordinator `coord-e03` runs slices 1–5, then slice 6 (line items). Slice 6's dependency on E02 slices 1 and 4 is met (C007, C014 landed 2026-10-24); it still waits for C012 and slice 5, and needs a reviewer job.
 - Overlap to sequence at land time: persist `version` bumps (E02 slice 7 north, E03 slices 5–6), `src/data/catalog.ts` (E02 slice 4 symbol, E03 slice 6 line entries), header controls (E02 slice 7, E03 slice 3).
 - E04 catalog-and-data: follows E02 and E03, backup included; line catalog items need E03 line items.
 - C005 selection-tap: parked; touch and mobile are out of scope for now.
