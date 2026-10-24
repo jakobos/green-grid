@@ -54,7 +54,7 @@ A user can snap items to a 0.5 m grid and resize them with handles or exact numb
 1. [x] Snap placement and movement to a 0.5 m grid — C008
 2. [x] Catalog search in the sidebar — C009
 3. [x] Duplicate the selected item — C011
-4. [ ] Resize area items with handles, snapped
+4. [ ] Resize area items with handles, snapped — C012 (planned)
 5. [ ] Item properties panel: label, width, height, notes
 6. [ ] Line items: drop, select, move, edit vertices, render in editor and export
 

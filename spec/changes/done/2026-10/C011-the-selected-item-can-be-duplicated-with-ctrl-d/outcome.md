@@ -1,6 +1,3 @@
 # C011 · The selected item can be duplicated with Ctrl+D or a button — outcome
 
-<!-- Three to six sentences: what changed, the merge commit, and anything the next reader must know.
-     Later workers on the same effort receive this text in their brief. -->
-
-Landed 2026-10-23 with `guild land 2026-10-23-e03-duplicate-continue-62731c`: merge commit c983b39 of guild/2026-10-23-e03-duplicate-ef38ae into master.
+`duplicateItem(id)` in `src/store/garden.ts` spreads the original (so label, notes and any later field copy too), gives it a new UUID, offsets it by `POSITION_SNAP_METERS` on both axes, pushes one history snapshot and selects the copy. The header shows a Duplicate button beside Rotate and Delete while an item is selected. In `Canvas.tsx` Ctrl+D is handled first: it always calls `preventDefault` (no bookmark dialog), and duplicates only when an item is selected and focus is not in an input. Ctrl+Z / Ctrl+Shift+Z now match the key case-insensitively, so keyboard redo works. Beyond the brief, `undo` clears `selectedItemId` when the restored items no longer contain it; this applies to undoing any add. Landed as c983b39 (bookkeeping 6033be6). Checked live: Ctrl+D and the button on a rotated item gave (9.5, 6) and (10, 6.5) at 90°, undo, Ctrl+Shift+Z and reload held, and Ctrl+D with no selection or in the search box made no copy and was default-prevented.
