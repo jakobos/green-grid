@@ -22,6 +22,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[1],
     estimatedCostEur: 0.5,
+    symbol: 'bulb',
   },
   {
     catalogId: 'bulb-daffodil',
@@ -33,6 +34,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[1],
     estimatedCostEur: 0.4,
+    symbol: 'bulb',
   },
   {
     catalogId: 'root-carrot',
@@ -44,6 +46,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'rect',
     color: LAYER_COLORS[1],
     estimatedCostEur: 1.2,
+    symbol: 'vegetable',
   },
 
   // Layer 2 — Ground level
@@ -57,6 +60,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[2],
     estimatedCostEur: 0.8,
+    symbol: 'groundcover',
   },
   {
     catalogId: 'groundcover-thyme',
@@ -68,6 +72,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'rect',
     color: LAYER_COLORS[2],
     estimatedCostEur: 2.5,
+    symbol: 'groundcover',
   },
   {
     catalogId: 'patch-strawberry',
@@ -79,6 +84,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[2],
     estimatedCostEur: 3.0,
+    symbol: 'groundcover',
   },
 
   // Layer 3 — Ground items
@@ -92,6 +98,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'rect',
     color: LAYER_COLORS[3],
     estimatedCostEur: 45.0,
+    symbol: 'bed',
   },
   {
     catalogId: 'herb-basil',
@@ -103,6 +110,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'rect',
     color: LAYER_COLORS[3],
     estimatedCostEur: 1.5,
+    symbol: 'herb',
   },
   {
     catalogId: 'herb-lavender',
@@ -114,6 +122,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[3],
     estimatedCostEur: 4.0,
+    symbol: 'herb',
   },
 
   // Layer 4 — Low plants
@@ -127,6 +136,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[4],
     estimatedCostEur: 6.0,
+    symbol: 'shrub',
   },
   {
     catalogId: 'shrub-blueberry',
@@ -138,6 +148,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[4],
     estimatedCostEur: 12.0,
+    symbol: 'shrub',
   },
   {
     catalogId: 'shrub-rose',
@@ -149,6 +160,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[4],
     estimatedCostEur: 15.0,
+    symbol: 'shrub',
   },
 
   // Layer 5 — Trees
@@ -162,6 +174,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[5],
     estimatedCostEur: 35.0,
+    symbol: 'tree',
   },
   {
     catalogId: 'tree-pear',
@@ -173,6 +186,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[5],
     estimatedCostEur: 30.0,
+    symbol: 'tree',
   },
   {
     catalogId: 'tree-birch',
@@ -184,6 +198,7 @@ export const CATALOG: CatalogItem[] = [
     shape: 'circle',
     color: LAYER_COLORS[5],
     estimatedCostEur: 25.0,
+    symbol: 'tree',
   },
 ]
 

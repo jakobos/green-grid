@@ -187,33 +187,33 @@ describe('seeded geometry', () => {
     }
   })
 
-  it('buildItemDrawable produces identical sets for the same seed (rect)', () => {
+  it('buildItemDrawable produces identical sets for the same seed (bed)', () => {
     const gen = rough.generator()
-    const seed = seedHash('test-item-rect')
-    const d1 = buildItemDrawable(gen, 'rect', 60, 60, '#4A9E6B', seed)
-    const d2 = buildItemDrawable(gen, 'rect', 60, 60, '#4A9E6B', seed)
-    expect(JSON.stringify(d1.sets)).toEqual(JSON.stringify(d2.sets))
+    const seed = seedHash('test-item-bed')
+    const d1 = buildItemDrawable(gen, 'bed', 60, 60, '#4A9E6B', seed)
+    const d2 = buildItemDrawable(gen, 'bed', 60, 60, '#4A9E6B', seed)
+    expect(JSON.stringify(d1)).toEqual(JSON.stringify(d2))
   })
 
-  it('buildItemDrawable produces identical sets for the same seed (circle)', () => {
+  it('buildItemDrawable produces identical sets for the same seed (tree)', () => {
     const gen = rough.generator()
-    const seed = seedHash('test-item-circle')
-    const d1 = buildItemDrawable(gen, 'circle', 80, 80, '#3A7CA5', seed)
-    const d2 = buildItemDrawable(gen, 'circle', 80, 80, '#3A7CA5', seed)
-    expect(JSON.stringify(d1.sets)).toEqual(JSON.stringify(d2.sets))
+    const seed = seedHash('test-item-tree')
+    const d1 = buildItemDrawable(gen, 'tree', 80, 80, '#3A7CA5', seed)
+    const d2 = buildItemDrawable(gen, 'tree', 80, 80, '#3A7CA5', seed)
+    expect(JSON.stringify(d1)).toEqual(JSON.stringify(d2))
   })
 
   it('buildItemDrawable produces different sets for different item ids', () => {
     const gen = rough.generator()
-    const d1 = buildItemDrawable(gen, 'rect', 60, 60, '#4A9E6B', seedHash('item-alpha'))
-    const d2 = buildItemDrawable(gen, 'rect', 60, 60, '#4A9E6B', seedHash('item-beta'))
-    expect(JSON.stringify(d1.sets)).not.toEqual(JSON.stringify(d2.sets))
+    const d1 = buildItemDrawable(gen, 'bed', 60, 60, '#4A9E6B', seedHash('item-alpha'))
+    const d2 = buildItemDrawable(gen, 'bed', 60, 60, '#4A9E6B', seedHash('item-beta'))
+    expect(JSON.stringify(d1)).not.toEqual(JSON.stringify(d2))
   })
 
-  it('buildItemDrawable includes hachure fill sets in the drawable', () => {
+  it('buildItemDrawable returns drawables with hachure fill and path sets (bed)', () => {
     const gen = rough.generator()
-    const d = buildItemDrawable(gen, 'rect', 60, 60, '#5C8A3C', seedHash('fill-test'))
-    const types = d.sets.map((s) => s.type)
+    const drawables = buildItemDrawable(gen, 'bed', 60, 60, '#5C8A3C', seedHash('fill-test'))
+    const types = drawables.flatMap((d) => d.sets.map((s) => s.type))
     // roughjs hachure fill produces a 'fillSketch' set; outline produces 'path'
     expect(types).toContain('fillSketch')
     expect(types).toContain('path')

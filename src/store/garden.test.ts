@@ -24,6 +24,7 @@ const testCatalogItem: CatalogItem = {
   shape: 'circle',
   color: '#2D5A27',
   estimatedCostEur: 35.0,
+  symbol: 'tree',
 }
 
 /** Get the active garden from the store. */

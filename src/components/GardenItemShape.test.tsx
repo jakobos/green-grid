@@ -71,6 +71,7 @@ const circleCatalog: CatalogItem = {
   shape: 'circle',
   color: '#2D5A27',
   estimatedCostEur: 35,
+  symbol: 'tree',
 }
 
 const rectCatalog: CatalogItem = {
@@ -83,6 +84,7 @@ const rectCatalog: CatalogItem = {
   shape: 'rect',
   color: '#4A9E6B',
   estimatedCostEur: 45,
+  symbol: 'bed',
 }
 
 const noop = (): void => {}

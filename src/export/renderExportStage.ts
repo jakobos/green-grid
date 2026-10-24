@@ -2,9 +2,10 @@ import Konva from 'konva'
 import rough from 'roughjs'
 import type { Drawable } from 'roughjs/bin/core'
 import type { RoughGenerator } from 'roughjs/bin/generator'
-import type { CatalogItem, Garden, GardenItem } from '@/types/garden'
+import type { CatalogItem, Garden, GardenItem, ItemSymbol } from '@/types/garden'
 import { LAYER_NAMES } from '@/data/catalog'
 import { seedHash } from './seedHash'
+import { drawSymbol, MIN_SYMBOL_PX } from './symbolDrawables'
 import {
   PX_PER_MM,
   mmToPx,
@@ -30,11 +31,8 @@ import { PAPER, INK, INK_MUTED, GRID_STROKE, BOUNDARY_STROKE } from './exportPal
 // garden size: a 3 m bed and a 100 m plot print with identical line weights.
 const GRID_SW = 0.1 * PX_PER_MM       // fine grid lines: 0.1 mm
 const BOUNDARY_SW = 0.45 * PX_PER_MM  // garden boundary: 0.45 mm
-const ITEM_SW = 0.3 * PX_PER_MM       // item outlines: 0.3 mm
 const COMPASS_SW = 0.5 * PX_PER_MM    // compass strokes: 0.5 mm
 const SCALE_BAR_SW = 0.45 * PX_PER_MM // scale bar: same weight as boundary
-// Hachure line gap: 2 mm in paper pixels
-const HACHURE_GAP = 2.0 * PX_PER_MM
 
 const FONT = 'sans-serif'
 
@@ -53,24 +51,13 @@ type LegendGroup = { layer: number; entries: CatalogItem[] }
  */
 export function buildItemDrawable(
   gen: RoughGenerator,
-  shape: 'rect' | 'circle',
+  symbol: ItemSymbol,
   wPx: number,
   hPx: number,
   color: string,
   seed: number,
-): Drawable {
-  const opts = {
-    seed,
-    roughness: 1.2,
-    stroke: INK,
-    strokeWidth: ITEM_SW,
-    fill: color,
-    fillStyle: 'hachure' as const,
-    hachureGap: HACHURE_GAP,
-  }
-  return shape === 'circle'
-    ? gen.ellipse(wPx / 2, hPx / 2, Math.min(wPx, hPx), Math.min(wPx, hPx), opts)
-    : gen.rectangle(0, 0, wPx, hPx, opts)
+): Drawable[] {
+  return drawSymbol(gen, symbol, wPx, hPx, color, seed)
 }
 
 export function buildLegendGroups(garden: Garden, catalog: CatalogItem[]): LegendGroup[] {
@@ -199,8 +186,9 @@ function drawDimensionLabels(
 }
 
 /**
- * Draw one placed garden item as a rough hachure-filled shape.
- * Metre coordinates are converted to paper pixels with pxPerMeter.
+ * Draw one placed garden item as its hand-drawn symbol.
+ * Items smaller than MIN_SYMBOL_PX on either axis are drawn at that minimum
+ * size, centred on the item's map position.
  */
 function drawItem(
   layer: Konva.Layer,
@@ -210,12 +198,14 @@ function drawItem(
 ): void {
   const w = item.widthMeters * pxPerMeter
   const h = item.heightMeters * pxPerMeter
+  const drawnW = Math.max(w, MIN_SYMBOL_PX)
+  const drawnH = Math.max(h, MIN_SYMBOL_PX)
   const gen = rough.generator()
-  const drawable = buildItemDrawable(
+  const drawables = buildItemDrawable(
     gen,
-    catalogItem.shape,
-    w,
-    h,
+    catalogItem.symbol,
+    drawnW,
+    drawnH,
     catalogItem.color,
     seedHash(item.id),
   )
@@ -223,23 +213,23 @@ function drawItem(
   const group = new Konva.Group({
     x: item.xMeters * pxPerMeter + w / 2,
     y: item.yMeters * pxPerMeter + h / 2,
-    offsetX: w / 2,
-    offsetY: h / 2,
+    offsetX: drawnW / 2,
+    offsetY: drawnH / 2,
     rotation: item.rotationDeg,
     name: 'garden-item',
   })
   group.add(
     new Konva.Shape({
-      width: w,
-      height: h,
+      width: drawnW,
+      height: drawnH,
       sceneFunc(ctx) {
         const rc = rough.canvas(ctx.canvas._canvas)
-        rc.draw(drawable)
+        for (const d of drawables) rc.draw(d)
       },
     }),
     new Konva.Text({
-      y: h / 2 - ptToPx(9) / 2,
-      width: w,
+      y: drawnH / 2 - ptToPx(9) / 2,
+      width: drawnW,
       text: catalogItem.name,
       fontSize: ptToPx(9),
       fontFamily: FONT,
@@ -427,14 +417,25 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
     cursor += headingH
     for (const entry of group.entries) {
       layer.add(
-        new Konva.Rect({
+        new Konva.Shape({
           x,
           y: cursor,
           width: swatchSz,
           height: swatchSz,
-          fill: entry.color,
-          opacity: 0.7,
           name: 'legend-swatch',
+          sceneFunc(ctx) {
+            const rc = rough.canvas(ctx.canvas._canvas)
+            const swatchGen = rough.generator()
+            const swatchDrawables = buildItemDrawable(
+              swatchGen,
+              entry.symbol,
+              swatchSz,
+              swatchSz,
+              entry.color,
+              seedHash(entry.catalogId),
+            )
+            for (const d of swatchDrawables) rc.draw(d)
+          },
         }),
         new Konva.Text({
           x: x + swatchSz + mmToPx(2),
