@@ -1,8 +1,7 @@
 import Konva from 'konva'
 import rough from 'roughjs'
 import type { Drawable } from 'roughjs/bin/core'
-import type { RoughGenerator } from 'roughjs/bin/generator'
-import type { CatalogItem, Garden, GardenItem, ItemSymbol } from '@/types/garden'
+import type { CatalogItem, Garden, GardenItem } from '@/types/garden'
 import { LAYER_NAMES } from '@/data/catalog'
 import { seedHash } from './seedHash'
 import { drawSymbol, MIN_SYMBOL_PX } from './symbolDrawables'
@@ -37,28 +36,6 @@ const SCALE_BAR_SW = 0.45 * PX_PER_MM // scale bar: same weight as boundary
 const FONT = 'sans-serif'
 
 type LegendGroup = { layer: number; entries: CatalogItem[] }
-
-// ── Exported test seams ────────────────────────────────────────────────────────
-
-/**
- * Build the roughjs Drawable for one item's body.
- * Exported so tests can verify determinism (same seed → identical sets)
- * without touching canvas. Never calls Math.random.
- *
- * wPx / hPx are in paper pixels (item metres × pxPerMeter).
- * Stroke width and hachure gap are fixed paper-unit constants, independent of
- * garden or item size — C010 re-expresses the values C007 tuned at 60 px/m.
- */
-export function buildItemDrawable(
-  gen: RoughGenerator,
-  symbol: ItemSymbol,
-  wPx: number,
-  hPx: number,
-  color: string,
-  seed: number,
-): Drawable[] {
-  return drawSymbol(gen, symbol, wPx, hPx, color, seed)
-}
 
 export function buildLegendGroups(garden: Garden, catalog: CatalogItem[]): LegendGroup[] {
   const placedIds = new Set(garden.items.map((item) => item.catalogId))
@@ -201,7 +178,7 @@ function drawItem(
   const drawnW = Math.max(w, MIN_SYMBOL_PX)
   const drawnH = Math.max(h, MIN_SYMBOL_PX)
   const gen = rough.generator()
-  const drawables = buildItemDrawable(
+  const drawables = drawSymbol(
     gen,
     catalogItem.symbol,
     drawnW,
@@ -426,7 +403,7 @@ function drawLegend(layer: Konva.Layer, groups: LegendGroup[], x: number, y: num
           sceneFunc(ctx) {
             const rc = rough.canvas(ctx.canvas._canvas)
             const swatchGen = rough.generator()
-            const swatchDrawables = buildItemDrawable(
+            const swatchDrawables = drawSymbol(
               swatchGen,
               entry.symbol,
               swatchSz,

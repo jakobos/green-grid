@@ -60,6 +60,31 @@ describe('drawSymbol', () => {
       expect(types.length).toBeGreaterThan(0)
     }
   })
+
+  it('each symbol spans at least 95% of its w×h box (control-polygon bounds)', () => {
+    // Use a larger box so roughness jitter (≤ 2 px) is small relative to the dimension.
+    const W = 120, H = 120
+    for (const sym of ALL_SYMBOLS) {
+      const drawables = draw(sym, W, H, '#4A9E6B', seedHash(sym))
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      for (const d of drawables) {
+        for (const set of d.sets) {
+          for (const op of set.ops) {
+            // op.data is a flat [x0,y0, x1,y1, ...] array for all op types
+            for (let i = 0; i < op.data.length; i += 2) {
+              const x = op.data[i], y = op.data[i + 1]
+              if (x < minX) minX = x
+              if (x > maxX) maxX = x
+              if (y < minY) minY = y
+              if (y > maxY) maxY = y
+            }
+          }
+        }
+      }
+      expect(maxX - minX).toBeGreaterThanOrEqual(W * 0.95)
+      expect(maxY - minY).toBeGreaterThanOrEqual(H * 0.95)
+    }
+  })
 })
 
 describe('MIN_SYMBOL_PX', () => {
