@@ -27,7 +27,7 @@ Slice 4 of E02. Read the Decisions and the C007 and C010 outcomes. Roughjs is dr
 ## Out of scope
 
 - Item name labels, markers and fonts (slice 5); legend quantities and costs (slice 6).
-- Any editor or `GardenItemShape` change; line items (E03); any persist `version` change. `symbol` is catalog data, not saved garden data.
+- Any editor, `GardenItemShape` or `Header.tsx` change; line items (E03); any persist `version` change. `symbol` is catalog data, not saved garden data.
 
 ## Acceptance
 
