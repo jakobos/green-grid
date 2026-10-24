@@ -69,7 +69,7 @@ One composition, two downloads. `src/export/` builds a single offscreen Konva st
 3. [x] PDF download of the A4 sheet via jspdf — C013
 4. [x] Item symbols: per-catalog `symbol` field and a hand-drawn symbol per kind — C014
 5. [x] Lettering and markers: bundled handwritten font, numbered markers on the plan keyed to the legend — C016
-6. [ ] Plant list: legend quantities, cost per entry, and a grand total — C017 (planned)
+6. [x] Plant list: legend quantities, cost per entry, and a grand total — C017
 7. [ ] North direction: per-garden setting in 45° steps, header control, editor north arrow, export compass follows it
 
 ## Risks and open questions

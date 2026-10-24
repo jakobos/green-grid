@@ -4,6 +4,7 @@ effort: E02
 slice: 6
 depends: [C016]
 opened: 2026-10-24
+closed: 2026-10-24
 ---
 
 # C017 · The legend lists each item's quantity and estimated cost with a grand total
