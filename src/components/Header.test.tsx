@@ -5,7 +5,7 @@ import { Header } from './Header'
 import { useGardenStore } from '@/store/garden'
 import { vi } from 'vitest'
 
-vi.mock('@/export/exportGarden', () => ({ exportGarden: vi.fn() }))
+vi.mock('@/export/exportGarden', () => ({ exportGarden: vi.fn(), exportGardenPdf: vi.fn() }))
 import type { Garden, Viewport } from '@/types/garden'
 
 const testGarden: Garden = {
@@ -195,5 +195,12 @@ describe('Header export', () => {
     render(<Header />)
     await userEvent.click(screen.getByRole('button', { name: 'Export PNG' }))
     await waitFor(() => expect(exportGarden).toHaveBeenCalledWith(activeGarden(), expect.any(Array)))
+  })
+
+  it('exports the active garden as PDF when Export PDF is clicked', async () => {
+    const { exportGardenPdf } = await import('@/export/exportGarden')
+    render(<Header />)
+    await userEvent.click(screen.getByRole('button', { name: 'Export PDF' }))
+    await waitFor(() => expect(exportGardenPdf).toHaveBeenCalledWith(activeGarden(), expect.any(Array)))
   })
 })

@@ -108,8 +108,8 @@ export function Header(): JSX.Element {
         <button
           type="button"
           onClick={async () => {
-            // Dynamic import keeps roughjs (and the full export pipeline) out of
-            // the main editor bundle; static import would pull 30+ kB into every
+            // Dynamic import keeps the full export pipeline (roughjs, jspdf) out of
+            // the main editor bundle; static import would pull ~330 kB into every
             // page load even when the user never exports.
             const { exportGarden } = await import('@/export/exportGarden')
             exportGarden(garden, CATALOG)
@@ -118,6 +118,17 @@ export function Header(): JSX.Element {
           aria-label="Export PNG"
         >
           Export PNG
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            const { exportGardenPdf } = await import('@/export/exportGarden')
+            exportGardenPdf(garden, CATALOG)
+          }}
+          className="rounded border bg-background px-3 py-1 text-sm hover:bg-accent"
+          aria-label="Export PDF"
+        >
+          Export PDF
         </button>
         <button
           type="button"
