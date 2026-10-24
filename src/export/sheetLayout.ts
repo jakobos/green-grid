@@ -45,6 +45,14 @@ export const LABEL_SIDE_MM = 10
 export const LABEL_TOP_MM = 8
 /** Fixed-width legend column on the right. */
 export const LEGEND_W_MM = 60
+/**
+ * Horizontal gap between the map column's right edge and the legend content.
+ * The rightmost metre label is centred on the map's right edge, so it extends
+ * LABEL_SIDE_MM/2 = 5 mm into the gap. Adding 3 mm safety gives 8 mm total.
+ * Applied to the legend content x, not to mapAreaMm, so scale selection is
+ * unaffected.
+ */
+export const LEGEND_CONTENT_GAP_MM = 8
 
 // ── Map area ──────────────────────────────────────────────────────────────────
 

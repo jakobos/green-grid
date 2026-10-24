@@ -8,6 +8,10 @@ import {
   labelStepMeters,
   scaleBarLengthMeters,
   STANDARD_SCALES,
+  MARGIN_MM,
+  LABEL_SIDE_MM,
+  LEGEND_W_MM,
+  LEGEND_CONTENT_GAP_MM,
 } from './sheetLayout'
 
 describe('sheetSizePx', () => {
@@ -218,5 +222,32 @@ describe('scaleBarLengthMeters', () => {
         expect(mm).toBeGreaterThanOrEqual(20)
       }
     }
+  })
+})
+
+describe('LEGEND_CONTENT_GAP_MM', () => {
+  it('is at least half label width (5mm) + 3mm safety', () => {
+    // Rightmost label is centred on the map's right edge → extends LABEL_SIDE_MM/2 into gap
+    expect(LEGEND_CONTENT_GAP_MM).toBeGreaterThanOrEqual(LABEL_SIDE_MM / 2 + 3)
+  })
+
+  it('full-width garden: right label edge + 3mm safety ≤ legend content x (both orientations)', () => {
+    // When a garden fills the entire map width the map's right edge coincides
+    // with legendX (= sheetW - MARGIN - LEGEND_W).  The rightmost label box
+    // extends LABEL_SIDE_MM/2 beyond that edge.  The legend content must start
+    // at or after that point plus 3 mm safety.
+    for (const orientation of ['portrait', 'landscape'] as const) {
+      const sheetWMm = orientation === 'portrait' ? 210 : 297
+      const legendXMm = sheetWMm - MARGIN_MM - LEGEND_W_MM
+      const legendContentXMm = legendXMm + LEGEND_CONTENT_GAP_MM
+      const labelRightEdgeMm = legendXMm + LABEL_SIDE_MM / 2 // label centred on map right edge
+      expect(legendContentXMm).toBeGreaterThanOrEqual(labelRightEdgeMm + 3)
+    }
+  })
+
+  it('100×10 m stays landscape at 1:500 (gap does not shrink mapAreaMm)', () => {
+    expect(chooseOrientation(100, 10)).toBe('landscape')
+    const { w, h } = mapAreaMm('landscape')
+    expect(pickScale(100, 10, w, h)).toBe(500)
   })
 })

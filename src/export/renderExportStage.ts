@@ -21,6 +21,7 @@ import {
   LABEL_SIDE_MM,
   LABEL_TOP_MM,
   LEGEND_W_MM,
+  LEGEND_CONTENT_GAP_MM,
 } from './sheetLayout'
 import { PAPER, INK, INK_MUTED, GRID_STROKE, BOUNDARY_STROKE } from './exportPalette'
 
@@ -562,7 +563,7 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
 
   // Legend ────────────────────────────────────────────────────────────────────
   const groups = buildLegendGroups(garden, catalog)
-  drawLegend(content, groups, legendX, mapColY)
+  drawLegend(content, groups, legendX + mmToPx(LEGEND_CONTENT_GAP_MM), mapColY)
 
   stage.draw()
   return stage
