@@ -104,9 +104,6 @@ export function Header(): JSX.Element {
           }}
           className="w-20"
         />
-      </div>
-
-      <div className="flex items-center gap-2">
         <select
           aria-label="North direction"
           value={garden.northDeg}
