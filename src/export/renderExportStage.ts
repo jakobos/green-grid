@@ -1,7 +1,7 @@
 import Konva from 'konva'
 import rough from 'roughjs'
 import type { Drawable } from 'roughjs/bin/core'
-import type { CatalogItem, Garden, GardenItem } from '@/types/garden'
+import type { CatalogItem, Garden, GardenItem, NorthDeg } from '@/types/garden'
 import { LAYER_NAMES } from '@/data/catalog'
 import { seedHash } from './seedHash'
 import { drawSymbol, MIN_SYMBOL_PX } from './symbolDrawables'
@@ -257,32 +257,51 @@ function drawItem(
 /**
  * Draw the hand-drawn north compass: rough arrow shaft + filled triangle head.
  * The design from C007 is scaled to 14 mm paper height (pxPerMeter-independent).
- * Arrow and "N" label are centred at (x, y); seed from gardenId.
+ * Arrow points in the northDeg direction (clockwise from up); "N" stays upright
+ * just past the arrow tip. Both are centred at (x, y); seed from gardenId.
  */
-function drawCompass(layer: Konva.Layer, x: number, y: number, gardenId: string): void {
-  // Scale old 60px design to 14 mm paper height
+function drawCompass(layer: Konva.Layer, x: number, y: number, northDeg: NorthDeg, gardenId: string): void {
+  // Scale old 60 px design to 14 mm paper height
   const shapeH = mmToPx(14)
   const s = shapeH / 60
-  const halfW = Math.round(7 * s) // arrowhead half-width ≈ 19 px
+  const halfW = Math.round(7 * s) // arrowhead half-width
   const sw = Math.ceil(COMPASS_SW)
-  // Shape is at group local x = -(halfW+sw); cx is the x centre in shape-local coords
-  const cx = halfW + sw
 
   const gen = rough.generator()
   const seed = seedHash(`${gardenId}:compass`)
-  // All x coords use cx so they resolve to group-local x=0 (centred under "N")
-  const shaft = gen.line(cx, Math.round(56 * s), cx, Math.round(30 * s), {
+
+  // ── Rotate arrow geometry ─────────────────────────────────────────────────
+  // All points centred at (0, 0); north-up is negative y.
+  // clockwise rotation in screen coords: x' = x·cos − y·sin, y' = x·sin + y·cos
+  const rad = (northDeg * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+
+  function rot(px: number, py: number): [number, number] {
+    return [px * cos - py * sin, px * sin + py * cos]
+  }
+
+  // Key y-levels in north-up frame (centre = 0, negative y = up)
+  const [tipX, tipY]           = rot(0, -18 * s) // arrow tip
+  const [shaftEndX, shaftEndY] = rot(0, -8 * s)  // shaft–head junction
+  const [shaftBaseX, shaftBaseY] = rot(0, 18 * s) // tail of shaft
+  const [headLX, headLY]       = rot(-halfW, -6 * s) // head base left
+  const [headRX, headRY]       = rot(halfW, -6 * s)  // head base right
+
+  // Square shape centred at (0, 0); add R to convert group-local → shape-local
+  const R = Math.round(20 * s + sw + 1)
+  const sl = (px: number, py: number): [number, number] => [px + R, py + R]
+
+  const [sb0, sb1] = sl(shaftBaseX, shaftBaseY)
+  const [se0, se1] = sl(shaftEndX, shaftEndY)
+  const shaft = gen.line(sb0, sb1, se0, se1, {
     seed,
     roughness: 0.8,
     strokeWidth: COMPASS_SW,
     stroke: INK,
   })
   const head = gen.polygon(
-    [
-      [cx, Math.round(20 * s)],
-      [cx - halfW, Math.round(32 * s)],
-      [cx + halfW, Math.round(32 * s)],
-    ],
+    [sl(tipX, tipY), sl(headLX, headLY), sl(headRX, headRY)],
     {
       seed: seed + 1,
       roughness: 0.8,
@@ -292,26 +311,34 @@ function drawCompass(layer: Konva.Layer, x: number, y: number, gardenId: string)
     },
   )
 
+  // ── "N" label — upright, centred at tipR + nSize/2 in the arrow direction ─
   const nSize = ptToPx(10)
+  // Arrow direction (screen): (sin, −cos); position N past the tip
+  const nDist = 18 * s + nSize / 2
+  const nCX = nDist * sin
+  const nCY = -nDist * cos
+
   const group = new Konva.Group({ x, y })
   group.add(
     new Konva.Text({
-      x: -nSize / 2,
-      y: 0,
+      x: nCX - nSize / 2,
+      y: nCY - nSize / 2,
       width: nSize,
+      height: nSize,
       text: 'N',
       fontSize: nSize,
       fontStyle: 'bold',
       fontFamily: FONT,
       fill: INK,
       align: 'center',
+      verticalAlign: 'middle',
     }),
     new Konva.Shape({
       name: 'compass',
-      x: -(halfW + sw),
-      y: 0,
-      width: halfW * 2 + sw * 2,
-      height: shapeH + sw,
+      x: -R,
+      y: -R,
+      width: 2 * R,
+      height: 2 * R,
       sceneFunc(ctx) {
         const rc = rough.canvas(ctx.canvas._canvas)
         rc.draw(shaft)
@@ -705,7 +732,7 @@ export function renderExportStage(garden: Garden, catalog: CatalogItem[]): Konva
     }),
   )
   drawScaleBar(content, titleTextX, yBar, scale)
-  drawCompass(content, legendX - mmToPx(12), margin + mmToPx(2), garden.id)
+  drawCompass(content, legendX - mmToPx(12), margin + mmToPx(11), garden.northDeg, garden.id)
 
   // Garden layer — (0,0) is the garden's top-left corner in paper pixels ────
   const gardenLayer = new Konva.Layer({ x: gardenX, y: gardenY })

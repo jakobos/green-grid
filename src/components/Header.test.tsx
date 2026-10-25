@@ -13,6 +13,7 @@ const testGarden: Garden = {
   name: 'Test Garden',
   widthMeters: 20,
   heightMeters: 30,
+  northDeg: 0,
   items: [],
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -186,6 +187,29 @@ describe('Header', () => {
     useGardenStore.getState().createGarden()
     render(<Header />)
     expect(screen.getByLabelText('Delete garden')).not.toBeDisabled()
+  })
+})
+
+describe('Header north direction', () => {
+  it('renders the north direction select with default "↑ N"', () => {
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    expect(select).toBeInTheDocument()
+    expect((select as HTMLSelectElement).value).toBe('0')
+  })
+
+  it('calls setNorthDeg when a direction is chosen', () => {
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    fireEvent.change(select, { target: { value: '90' } })
+    expect(activeGarden().northDeg).toBe(90)
+  })
+
+  it('reflects northDeg from the store', () => {
+    useGardenStore.getState().setNorthDeg(180)
+    render(<Header />)
+    const select = screen.getByRole('combobox', { name: 'North direction' })
+    expect((select as HTMLSelectElement).value).toBe('180')
   })
 })
 

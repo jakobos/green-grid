@@ -46,6 +46,7 @@ const testGarden: Garden = {
   name: 'Test Garden',
   widthMeters: 20,
   heightMeters: 20,
+  northDeg: 0,
   items: [],
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Garden, GardenItem, Viewport } from '@/types/garden'
+import type { Garden, GardenItem, Viewport, NorthDeg } from '@/types/garden'
 import type { CatalogItem } from '@/types/garden'
 import { POSITION_SNAP_METERS } from '@/lib/snap'
 
@@ -24,6 +24,7 @@ type GardenStore = {
   setGardenName: (name: string) => void
   setGardenWidth: (widthMeters: number) => void
   setGardenHeight: (heightMeters: number) => void
+  setNorthDeg: (deg: NorthDeg) => void
   setViewport: (viewport: Viewport) => void
   addItem: (payload: AddItemPayload) => void
   removeItem: (id: string) => void
@@ -47,6 +48,7 @@ function makeGarden(name: string): Garden {
     name,
     widthMeters: 20,
     heightMeters: 20,
+    northDeg: 0,
     items: [],
     createdAt: now,
     updatedAt: now,
@@ -115,6 +117,15 @@ export const useGardenStore = create<GardenStore>()(
           gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
             ...g,
             heightMeters,
+            updatedAt: new Date().toISOString(),
+          })),
+        })),
+
+      setNorthDeg: (deg) =>
+        set((state) => ({
+          gardens: updateActiveGarden(state.gardens, state.activeGardenId, (g) => ({
+            ...g,
+            northDeg: deg,
             updatedAt: new Date().toISOString(),
           })),
         })),
@@ -307,24 +318,40 @@ export const useGardenStore = create<GardenStore>()(
     }),
     {
       name: 'green-grid-garden',
-      version: 1,
+      version: 2,
       partialize: (state) => ({
         gardens: state.gardens,
         activeGardenId: state.activeGardenId,
         viewports: state.viewports,
       }),
       migrate: (persisted: unknown, version: number) => {
+        let data = persisted
+
+        // step 1: v0 → v1 shape (single-garden object → multi-garden array)
         if (version === 0) {
-          const old = persisted as { garden?: Garden; viewport?: Viewport }
+          type V0 = { garden?: Omit<Garden, 'northDeg'>; viewport?: Viewport }
+          const old = data as V0
           const garden = old.garden ?? makeGarden('My Garden')
           const viewport = old.viewport ?? { ...defaultViewport }
-          return {
+          data = {
             gardens: [garden],
             activeGardenId: garden.id,
             viewports: { [garden.id]: viewport },
           }
         }
-        return persisted
+
+        // step 2: v0 and v1 → v2 (add northDeg: 0 to each garden; v0 falls through)
+        if (version <= 1) {
+          type V1Like = { gardens?: unknown; activeGardenId?: string; viewports?: unknown }
+          const old = data as V1Like
+          if (!Array.isArray(old?.gardens)) return persisted
+          return {
+            ...old,
+            gardens: (old.gardens as Omit<Garden, 'northDeg'>[]).map((g) => ({ ...g, northDeg: 0 as const })),
+          }
+        }
+
+        return data
       },
     }
   )

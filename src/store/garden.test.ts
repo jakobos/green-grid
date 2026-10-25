@@ -7,6 +7,7 @@ const testGarden: Garden = {
   name: 'Test Garden',
   widthMeters: 20,
   heightMeters: 30,
+  northDeg: 0,
   items: [],
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -383,8 +384,8 @@ describe('useGardenStore', () => {
   })
 
   describe('migration', () => {
-    it('migrates v0 single-garden to v1 multi-garden', () => {
-      const v0Garden: Garden = {
+    it('migrates v0 single-garden to v2 multi-garden with northDeg', () => {
+      const v0Garden = {
         id: 'migrated-id',
         name: 'Old Garden',
         widthMeters: 15,
@@ -398,14 +399,72 @@ describe('useGardenStore', () => {
         'green-grid-garden',
         JSON.stringify({ state: { garden: v0Garden, viewport: v0Viewport }, version: 0 })
       )
-      // Force rehydration
       useGardenStore.persist.rehydrate()
       const state = useGardenStore.getState()
       expect(state.gardens).toHaveLength(1)
       expect(state.gardens[0].id).toBe('migrated-id')
       expect(state.gardens[0].name).toBe('Old Garden')
+      expect(state.gardens[0].northDeg).toBe(0)
       expect(state.activeGardenId).toBe('migrated-id')
       expect(state.viewports['migrated-id']).toEqual(v0Viewport)
+    })
+
+    it('migrates v1 multi-garden to v2 by adding northDeg: 0 to each garden', () => {
+      const v1Garden = {
+        id: 'v1-id',
+        name: 'V1 Garden',
+        widthMeters: 10,
+        heightMeters: 10,
+        items: [],
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      }
+      const v1Viewport: Viewport = { x: 0, y: 0, scale: 1 }
+      localStorage.setItem(
+        'green-grid-garden',
+        JSON.stringify({
+          state: {
+            gardens: [v1Garden],
+            activeGardenId: v1Garden.id,
+            viewports: { [v1Garden.id]: v1Viewport },
+          },
+          version: 1,
+        })
+      )
+      useGardenStore.persist.rehydrate()
+      const state = useGardenStore.getState()
+      expect(state.gardens).toHaveLength(1)
+      expect(state.gardens[0].id).toBe('v1-id')
+      expect(state.gardens[0].northDeg).toBe(0)
+      expect(state.viewports['v1-id']).toEqual(v1Viewport)
+    })
+
+    it('does not throw and preserves store state for malformed v1 with non-array gardens', () => {
+      localStorage.setItem(
+        'green-grid-garden',
+        JSON.stringify({ state: { gardens: null, activeGardenId: 'x', viewports: {} }, version: 1 })
+      )
+      expect(() => useGardenStore.persist.rehydrate()).not.toThrow()
+    })
+  })
+
+  describe('setNorthDeg', () => {
+    it('updates northDeg on the active garden', () => {
+      useGardenStore.getState().setNorthDeg(90)
+      expect(activeGarden().northDeg).toBe(90)
+    })
+
+    it('does not push to undo history', () => {
+      useGardenStore.getState().setNorthDeg(180)
+      expect(useGardenStore.getState().past).toHaveLength(0)
+    })
+
+    it('is not undone by undo', () => {
+      // add an item so undo has something to do
+      useGardenStore.getState().addItem({ catalogItem: testCatalogItem, xMeters: 0, yMeters: 0 })
+      useGardenStore.getState().setNorthDeg(270)
+      useGardenStore.getState().undo()
+      expect(activeGarden().northDeg).toBe(270)
     })
   })
 })
