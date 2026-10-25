@@ -4,6 +4,7 @@ effort: E02
 slice: 7
 depends: [C017]
 opened: 2026-10-24
+closed: 2026-10-25
 ---
 
 # C018 · Each garden has a north direction that the editor arrow and the export compass follow
